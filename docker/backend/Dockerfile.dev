@@ -1,0 +1,60 @@
+# jshERP 后端开发环境 Dockerfile
+# 支持源码挂载和热重载
+
+FROM --platform=linux/amd64 maven:3.6.3-openjdk-8-slim AS development
+
+# 复制本地下载的 deb 包
+COPY *.deb /tmp/
+
+# 安装必要工具（先尝试在线安装，失败则使用本地包）
+RUN apt-get update && \
+    (apt-get install -y curl tzdata fontconfig libfreetype6 fonts-dejavu-core fonts-dejavu-extra || true) && \
+    # 安装本地 deb 包
+    dpkg -i /tmp/libbsd0_*.deb || true && \
+    dpkg -i /tmp/git-man_*.deb || true && \
+    dpkg -i /tmp/vim_*.deb || true && \
+    # 修复依赖关系
+    apt-get install -f -y && \
+    # 清理
+    rm -rf /var/lib/apt/lists/* /tmp/*.deb
+
+# 设置时区
+ARG TIMEZONE=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TIMEZONE /etc/localtime && echo $TIMEZONE > /etc/timezone
+
+# 开发环境简化：使用 root 用户避免权限问题
+# 设置工作目录
+WORKDIR /app
+
+# 创建必要目录
+RUN mkdir -p /opt/jshERP/upload /opt/tmp/tomcat /root/.m2
+
+# 创建启动脚本
+RUN echo '#!/bin/bash\n\
+echo "=== 启动 jshERP 后端服务 ==="\n\
+\n\
+# 配置 Maven 环境\n\
+export MAVEN_CONFIG=/root/.m2\n\
+export M2_HOME=/usr/share/maven\n\
+export MAVEN_OPTS="-Xms256m -Xmx512m"\n\
+\n\
+# 创建目录\n\
+mkdir -p /root/.m2/repository\n\
+\n\
+# 显示调试信息\n\
+echo "当前工作目录：$(pwd)"\n\
+ls -la\n\
+\n\
+# 启动应用\n\
+echo "正在启动 Spring Boot 应用..."\n\
+mvn spring-boot:run \\\n\
+  -Dspring-boot.run.jvmArguments="-Dspring.profiles.active=docker -Xms256m -Xmx512m -Djava.awt.headless=true" \\\n\
+  -Dmaven.repo.local=/root/.m2/repository \\\n\
+  -Dmaven.test.skip=true\n\
+' > /start.sh && chmod +x /start.sh
+
+# 暴露端口  
+EXPOSE 9999 35729
+
+# 使用启动脚本
+CMD ["/start.sh"]

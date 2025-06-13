@@ -1,0 +1,195 @@
+# jshERP Docker Compose 生产环境配置
+# 用于生产部署，优化性能和安全性
+
+version: '3.8'
+
+services:
+  # MySQL 数据库服务 (生产优化配置)
+  jsherp-mysql:
+    image: mysql:${MYSQL_VERSION:-5.7.33}
+    container_name: jsherp-mysql-prod
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-jsh_erp}
+      MYSQL_USER: ${MYSQL_USER:-jsh_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: ${TIMEZONE:-Asia/Shanghai}
+    command: [
+      '--character-set-server=utf8mb4',
+      '--collation-server=utf8mb4_unicode_ci',
+      '--default-time-zone=+08:00',
+      '--max_connections=2000',
+      '--innodb_buffer_pool_size=1024M',
+      '--innodb_log_file_size=256M',
+      '--innodb_flush_log_at_trx_commit=1',
+      '--sync_binlog=1',
+      '--innodb_flush_method=O_DIRECT',
+      '--innodb_lock_wait_timeout=120',
+      '--query_cache_type=1',
+      '--query_cache_size=64M',
+      '--slow_query_log=1',
+      '--slow_query_log_file=/var/log/mysql/slow.log',
+      '--long_query_time=2'
+    ]    ports:
+      - "${HOST_MYSQL_PORT:-3306}:3306"
+    volumes:
+      - ./volumes/mysql:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./volumes/mysql/logs:/var/log/mysql
+    networks:
+      - jsherp_network_prod
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis 缓存服务 (生产优化配置)
+  jsherp-redis:
+    image: redis:${REDIS_VERSION:-6.2.1-alpine}
+    container_name: jsherp-redis-prod
+    restart: always
+    environment:
+      TZ: ${TIMEZONE:-Asia/Shanghai}
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "${HOST_REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./volumes/redis:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - jsherp_network_prod    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 后端生产服务
+  jsherp-backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    image: jsherp-backend:${BACKEND_IMAGE_TAG:-latest}
+    container_name: jsherp-backend-prod
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://jsherp-mysql:3306/${MYSQL_DATABASE:-jsh_erp}?useUnicode=true&characterEncoding=utf8&useCursorFetch=true&defaultFetchSize=500&allowMultiQueries=true&rewriteBatchedStatements=true&useSSL=false&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-jsh_user}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_REDIS_HOST: jsherp-redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      FILE_UPLOAD_PATH: ${FILE_UPLOAD_PATH:-/opt/jshERP/upload}
+      TZ: ${TIMEZONE:-Asia/Shanghai}
+      JVM_OPTS: ${JVM_OPTS:--Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication}
+    ports:
+      - "${HOST_BACKEND_PORT:-9999}:9999"
+    volumes:
+      - ./volumes/uploads:${FILE_UPLOAD_PATH:-/opt/jshERP/upload}
+      - ./volumes/logs/backend:/app/logs    depends_on:
+      jsherp-mysql:
+        condition: service_healthy
+      jsherp-redis:
+        condition: service_healthy
+    networks:
+      - jsherp_network_prod
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+          cpus: '2.0'
+        reservations:
+          memory: 1024M
+          cpus: '1.0'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 前端生产服务
+  jsherp-frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+      target: production
+    image: jsherp-frontend:${FRONTEND_IMAGE_TAG:-latest}
+    container_name: jsherp-frontend-prod
+    restart: always
+    environment:
+      TZ: ${TIMEZONE:-Asia/Shanghai}
+    networks:
+      - jsherp_network_prod
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nginx 生产代理服务
+  jsherp-nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    image: jsherp-nginx:latest
+    container_name: jsherp-nginx-prod
+    restart: always
+    environment:
+      TZ: ${TIMEZONE:-Asia/Shanghai}
+    ports:
+      - "${HOST_NGINX_PORT:-8000}:80"
+      - "443:443"  # HTTPS 端口
+    volumes:
+      - ./volumes/uploads:/opt/jshERP/upload:ro
+      - ./volumes/logs/nginx:/var/log/nginx
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro  # SSL 证书目录
+    depends_on:
+      - jsherp-backend
+      - jsherp-frontend
+    networks:
+      - jsherp_network_prod
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# 生产环境网络配置
+networks:
+  jsherp_network_prod:
+    name: jsherp_network_prod
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# 生产环境卷配置
+volumes:
+  mysql_data_prod:
+    driver: local
+  redis_data_prod:
+    driver: local
+  uploads_data_prod:
+    driver: local

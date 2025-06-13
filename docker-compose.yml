@@ -1,0 +1,138 @@
+# jshERP Docker Compose 主配置文件
+# 用于生产环境部署，提供完整的容器化服务
+
+version: '3.8'
+
+services:
+  # MySQL 数据库服务
+  jsherp-mysql:
+    image: mysql:${MYSQL_VERSION:-5.7.33}
+    container_name: jsherp-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-jsh_erp}
+      MYSQL_USER: ${MYSQL_USER:-jsh_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-123456}
+      TZ: ${TIMEZONE:-Asia/Shanghai}
+    command: [
+      '--character-set-server=utf8mb4',
+      '--collation-server=utf8mb4_unicode_ci',
+      '--default-time-zone=+08:00',
+      '--max_connections=1000',
+      '--innodb_buffer_pool_size=256M',
+      '--innodb_log_file_size=64M',
+      '--innodb_flush_log_at_trx_commit=1',
+      '--sync_binlog=1'
+    ]
+    ports:
+      - "${HOST_MYSQL_PORT:-3306}:3306"
+    volumes:
+      - ./volumes/mysql:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro    networks:
+      - jsherp_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Redis 缓存服务
+  jsherp-redis:
+    image: redis:${REDIS_VERSION:-6.2.1-alpine}
+    container_name: jsherp-redis
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE:-Asia/Shanghai}
+    command: redis-server --requirepass ${REDIS_PASSWORD:-1234abcd} --appendonly yes
+    ports:
+      - "${HOST_REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./volumes/redis:/data
+    networks:
+      - jsherp_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 10s
+      retries: 5
+
+  # 后端服务
+  jsherp-backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+      target: production
+    image: jsherp-backend:${BACKEND_IMAGE_TAG:-latest}
+    container_name: jsherp-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+      SPRING_DATASOURCE_URL: jdbc:mysql://jsherp-mysql:3306/${MYSQL_DATABASE:-jsh_erp}?useUnicode=true&characterEncoding=utf8&useCursorFetch=true&defaultFetchSize=500&allowMultiQueries=true&rewriteBatchedStatements=true&useSSL=false&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-jsh_user}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-123456}
+      SPRING_REDIS_HOST: jsherp-redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-1234abcd}
+      FILE_UPLOAD_PATH: ${FILE_UPLOAD_PATH:-/opt/jshERP/upload}
+      TZ: ${TIMEZONE:-Asia/Shanghai}
+      JVM_OPTS: ${JVM_OPTS:--Xms512m -Xmx1024m -XX:+UseG1GC}
+    ports:
+      - "${HOST_BACKEND_PORT:-9999}:9999"
+    volumes:
+      - ./volumes/uploads:${FILE_UPLOAD_PATH:-/opt/jshERP/upload}
+    depends_on:
+      jsherp-mysql:
+        condition: service_healthy
+      jsherp-redis:
+        condition: service_healthy
+    networks:
+      - jsherp_network
+
+  # 前端服务
+  jsherp-frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+      target: production
+    image: jsherp-frontend:${FRONTEND_IMAGE_TAG:-latest}
+    container_name: jsherp-frontend
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE:-Asia/Shanghai}
+    networks:
+      - jsherp_network
+
+  # Nginx 代理服务
+  jsherp-nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    image: jsherp-nginx:latest
+    container_name: jsherp-nginx
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE:-Asia/Shanghai}
+    ports:
+      - "${HOST_NGINX_PORT:-8000}:80"
+    volumes:
+      - ./volumes/uploads:/opt/jshERP/upload:ro
+    depends_on:
+      - jsherp-backend
+      - jsherp-frontend
+    networks:
+      - jsherp_network
+
+# 网络配置
+networks:
+  jsherp_network:
+    name: ${NETWORK_NAME:-jsherp_network}
+    driver: bridge
+
+# 卷配置
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  uploads_data:
+    driver: local
