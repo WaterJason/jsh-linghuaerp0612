@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.linghua.plugin.schedule.datasource.mappers.ScheduleShiftMapperEx">
+    
+    <!-- Get shift list for management page -->
+    <select id="getShiftListForManagement" resultType="java.util.Map">
+        SELECT 
+            s.id,
+            s.shift_name AS shiftName,
+            s.shift_type AS shiftType,
+            s.start_time AS startTime,
+            s.end_time AS endTime,
+            s.duration_hours AS durationHours,
+            s.is_active AS isActive,
+            s.sort_order AS sortOrder,
+            s.description,
+            s.color,
+            s.create_time AS createTime,
+            s.update_time AS updateTime,
+            IFNULL(usage.assignment_count, 0) AS assignmentCount
+        FROM jsh_schedule_shift s
+        LEFT JOIN (
+            SELECT 
+                shift_id,
+                COUNT(*) AS assignment_count
+            FROM jsh_schedule_assignment
+            WHERE tenant_id = #{tenantId,jdbcType=BIGINT}
+            AND ifnull(delete_flag,'0') != '1'
+            GROUP BY shift_id
+        ) usage ON s.id = usage.shift_id
+        WHERE s.tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND ifnull(s.delete_flag,'0') != '1'
+        <if test="shiftName != null and shiftName != ''">
+            <bind name="bindShiftName" value="'%' + shiftName + '%'" />
+            AND s.shift_name LIKE #{bindShiftName}
+        </if>
+        <if test="shiftType != null and shiftType != ''">
+            AND s.shift_type = #{shiftType,jdbcType=VARCHAR}
+        </if>
+        <if test="isActive != null">
+            AND s.is_active = #{isActive,jdbcType=TINYINT}
+        </if>
+        ORDER BY s.sort_order ASC, s.id DESC
+    </select>
+    
+    <!-- Get shift options for dropdown -->
+    <select id="getShiftOptions" resultType="java.util.Map">
+        SELECT 
+            id AS value,
+            shift_name AS label,
+            shift_type AS type,
+            color,
+            CONCAT(shift_name, ' (', start_time, '-', end_time, ')') AS displayName
+        FROM jsh_schedule_shift
+        WHERE tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND is_active = 1
+        AND ifnull(delete_flag,'0') != '1'
+        ORDER BY sort_order ASC, id DESC
+    </select>
+    
+    <!-- Get shift statistics -->
+    <select id="getShiftStatistics" resultType="java.util.Map">
+        SELECT 
+            s.id,
+            s.shift_name AS shiftName,
+            s.shift_type AS shiftType,
+            s.color,
+            COUNT(a.id) AS totalAssignments,
+            COUNT(DISTINCT a.user_id) AS uniqueUsers,
+            COUNT(CASE WHEN a.status = 'COMPLETED' THEN 1 END) AS completedAssignments,
+            ROUND(AVG(a.work_hours), 2) AS avgWorkHours
+        FROM jsh_schedule_shift s
+        LEFT JOIN jsh_schedule_assignment a ON s.id = a.shift_id 
+            AND a.tenant_id = #{tenantId,jdbcType=BIGINT}
+            AND ifnull(a.delete_flag,'0') != '1'
+            <if test="startDate != null and startDate != ''">
+                AND a.schedule_date >= #{startDate,jdbcType=DATE}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND a.schedule_date <= #{endDate,jdbcType=DATE}
+            </if>
+        WHERE s.tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND ifnull(s.delete_flag,'0') != '1'
+        GROUP BY s.id, s.shift_name, s.shift_type, s.color
+        ORDER BY totalAssignments DESC, s.sort_order ASC
+    </select>
+    
+    <!-- Get shift usage count -->
+    <select id="getShiftUsageCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM jsh_schedule_assignment
+        WHERE shift_id = #{shiftId,jdbcType=BIGINT}
+        AND tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND ifnull(delete_flag,'0') != '1'
+    </select>
+    
+    <!-- Get shifts with assignment count -->
+    <select id="getShiftsWithAssignmentCount" resultType="java.util.Map">
+        SELECT 
+            s.id,
+            s.shift_name AS shiftName,
+            s.shift_type AS shiftType,
+            s.color,
+            COUNT(a.id) AS assignmentCount,
+            SUM(CASE WHEN a.status = 'COMPLETED' THEN 1 ELSE 0 END) AS completedCount
+        FROM jsh_schedule_shift s
+        LEFT JOIN jsh_schedule_assignment a ON s.id = a.shift_id 
+            AND a.tenant_id = #{tenantId,jdbcType=BIGINT}
+            AND ifnull(a.delete_flag,'0') != '1'
+            AND a.schedule_date BETWEEN #{startDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+        WHERE s.tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND ifnull(s.delete_flag,'0') != '1'
+        GROUP BY s.id, s.shift_name, s.shift_type, s.color
+        ORDER BY assignmentCount DESC, s.sort_order ASC
+    </select>
+    
+    <!-- Get popular shifts -->
+    <select id="getPopularShifts" resultType="java.util.Map">
+        SELECT 
+            s.id,
+            s.shift_name AS shiftName,
+            s.shift_type AS shiftType,
+            s.color,
+            COUNT(a.id) AS usageCount,
+            ROUND(COUNT(a.id) * 100.0 / total.total_assignments, 2) AS usagePercentage
+        FROM jsh_schedule_shift s
+        LEFT JOIN jsh_schedule_assignment a ON s.id = a.shift_id 
+            AND a.tenant_id = #{tenantId,jdbcType=BIGINT}
+            AND ifnull(a.delete_flag,'0') != '1'
+        CROSS JOIN (
+            SELECT COUNT(*) AS total_assignments
+            FROM jsh_schedule_assignment
+            WHERE tenant_id = #{tenantId,jdbcType=BIGINT}
+            AND ifnull(delete_flag,'0') != '1'
+        ) total
+        WHERE s.tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND ifnull(s.delete_flag,'0') != '1'
+        GROUP BY s.id, s.shift_name, s.shift_type, s.color, total.total_assignments
+        ORDER BY usageCount DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+    
+    <!-- Get shift details -->
+    <select id="getShiftDetails" resultType="java.util.Map">
+        SELECT 
+            s.id,
+            s.shift_name AS shiftName,
+            s.shift_type AS shiftType,
+            s.start_time AS startTime,
+            s.end_time AS endTime,
+            s.duration_hours AS durationHours,
+            s.is_active AS isActive,
+            s.sort_order AS sortOrder,
+            s.description,
+            s.color,
+            s.create_time AS createTime,
+            s.update_time AS updateTime,
+            COUNT(a.id) AS totalAssignments,
+            COUNT(DISTINCT a.user_id) AS uniqueUsers,
+            COUNT(CASE WHEN a.status = 'COMPLETED' THEN 1 END) AS completedAssignments,
+            COUNT(CASE WHEN a.status = 'CANCELLED' THEN 1 END) AS cancelledAssignments
+        FROM jsh_schedule_shift s
+        LEFT JOIN jsh_schedule_assignment a ON s.id = a.shift_id 
+            AND a.tenant_id = #{tenantId,jdbcType=BIGINT}
+            AND ifnull(a.delete_flag,'0') != '1'
+        WHERE s.id = #{shiftId,jdbcType=BIGINT}
+        AND s.tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND ifnull(s.delete_flag,'0') != '1'
+        GROUP BY s.id, s.shift_name, s.shift_type, s.start_time, s.end_time, 
+                 s.duration_hours, s.is_active, s.sort_order, s.description, 
+                 s.color, s.create_time, s.update_time
+    </select>
+    
+    <!-- Check time conflict -->
+    <select id="checkTimeConflict" resultMap="com.linghua.plugin.schedule.datasource.mappers.ScheduleShiftMapper.BaseResultMap">
+        SELECT 
+            id, shift_name, shift_type, start_time, end_time, duration_hours, is_active, 
+            sort_order, description, color, tenant_id, delete_flag, create_time, update_time, 
+            create_by, update_by
+        FROM jsh_schedule_shift
+        WHERE tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND ifnull(delete_flag,'0') != '1'
+        AND is_active = 1
+        <if test="excludeId != null">
+            AND id != #{excludeId,jdbcType=BIGINT}
+        </if>
+        AND (
+            (start_time <= #{startTime,jdbcType=TIME} AND end_time > #{startTime,jdbcType=TIME})
+            OR (start_time < #{endTime,jdbcType=TIME} AND end_time >= #{endTime,jdbcType=TIME})
+            OR (start_time >= #{startTime,jdbcType=TIME} AND end_time <= #{endTime,jdbcType=TIME})
+        )
+    </select>
+    
+    <!-- Get shifts by type -->
+    <select id="getShiftsByType" resultMap="com.linghua.plugin.schedule.datasource.mappers.ScheduleShiftMapper.BaseResultMap">
+        SELECT 
+            id, shift_name, shift_type, start_time, end_time, duration_hours, is_active, 
+            sort_order, description, color, tenant_id, delete_flag, create_time, update_time, 
+            create_by, update_by
+        FROM jsh_schedule_shift
+        WHERE shift_type = #{shiftType,jdbcType=VARCHAR}
+        AND tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND ifnull(delete_flag,'0') != '1'
+        ORDER BY sort_order ASC, id DESC
+    </select>
+    
+    <!-- Get shift export data -->
+    <select id="getShiftExportData" resultType="java.util.Map">
+        SELECT 
+            s.shift_name AS '班次名称',
+            s.shift_type AS '班次类型',
+            s.start_time AS '开始时间',
+            s.end_time AS '结束时间',
+            s.duration_hours AS '时长(小时)',
+            CASE s.is_active WHEN 1 THEN '启用' ELSE '禁用' END AS '状态',
+            s.description AS '描述',
+            COUNT(a.id) AS '使用次数',
+            s.create_time AS '创建时间'
+        FROM jsh_schedule_shift s
+        LEFT JOIN jsh_schedule_assignment a ON s.id = a.shift_id 
+            AND a.tenant_id = #{tenantId,jdbcType=BIGINT}
+            AND ifnull(a.delete_flag,'0') != '1'
+        WHERE s.tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND ifnull(s.delete_flag,'0') != '1'
+        <if test="shiftName != null and shiftName != ''">
+            <bind name="bindShiftName" value="'%' + shiftName + '%'" />
+            AND s.shift_name LIKE #{bindShiftName}
+        </if>
+        <if test="shiftType != null and shiftType != ''">
+            AND s.shift_type = #{shiftType,jdbcType=VARCHAR}
+        </if>
+        <if test="isActive != null">
+            AND s.is_active = #{isActive,jdbcType=TINYINT}
+        </if>
+        GROUP BY s.id, s.shift_name, s.shift_type, s.start_time, s.end_time, 
+                 s.duration_hours, s.is_active, s.description, s.create_time
+        ORDER BY s.sort_order ASC, s.id DESC
+    </select>
+    
+    <!-- Batch update status -->
+    <update id="batchUpdateStatus">
+        UPDATE jsh_schedule_shift
+        SET is_active = #{isActive,jdbcType=TINYINT},
+            update_time = NOW(),
+            update_by = #{updateBy,jdbcType=BIGINT}
+        WHERE tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    
+    <!-- Get max sort order -->
+    <select id="getMaxSortOrder" resultType="java.lang.Integer">
+        SELECT IFNULL(MAX(sort_order), 0)
+        FROM jsh_schedule_shift
+        WHERE tenant_id = #{tenantId,jdbcType=BIGINT}
+        AND ifnull(delete_flag,'0') != '1'
+    </select>
+    
+</mapper>

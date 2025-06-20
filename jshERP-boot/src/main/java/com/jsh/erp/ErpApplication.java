@@ -13,8 +13,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.io.IOException;
 
-@SpringBootApplication
-@MapperScan("com.jsh.erp.datasource.mappers")
+@SpringBootApplication(scanBasePackages = {"com.jsh.erp", "com.linghua.plugin"})
+@MapperScan({"com.jsh.erp.datasource.mappers", "com.linghua.plugin.schedule.datasource.mappers"})
 @ServletComponentScan
 @EnableScheduling
 public class ErpApplication{
