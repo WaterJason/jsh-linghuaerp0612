@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jsh.erp.datasource.mappers.WorkOrderMapper">
+  <resultMap id="BaseResultMap" type="com.jsh.erp.datasource.entities.WorkOrder">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="work_order_no" jdbcType="VARCHAR" property="workOrderNo" />
+    <result column="production_order_id" jdbcType="BIGINT" property="productionOrderId" />
+    <result column="work_order_type" jdbcType="VARCHAR" property="workOrderType" />
+    <result column="material_id" jdbcType="BIGINT" property="materialId" />
+    <result column="quantity" jdbcType="DECIMAL" property="quantity" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="priority" jdbcType="VARCHAR" property="priority" />
+    <result column="assigned_to" jdbcType="BIGINT" property="assignedTo" />
+    <result column="start_time" jdbcType="TIMESTAMP" property="startTime" />
+    <result column="complete_time" jdbcType="TIMESTAMP" property="completeTime" />
+    <result column="estimated_hours" jdbcType="DECIMAL" property="estimatedHours" />
+    <result column="actual_hours" jdbcType="DECIMAL" property="actualHours" />
+    <result column="cost" jdbcType="DECIMAL" property="cost" />
+    <result column="labor_cost" jdbcType="DECIMAL" property="laborCost" />
+    <result column="material_cost" jdbcType="DECIMAL" property="materialCost" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+    <result column="complete_images" jdbcType="VARCHAR" property="completeImages" />
+    <result column="process_images" jdbcType="VARCHAR" property="processImages" />
+    <result column="logistics_no" jdbcType="VARCHAR" property="logisticsNo" />
+    <result column="tenant_id" jdbcType="BIGINT" property="tenantId" />
+    <result column="delete_flag" jdbcType="VARCHAR" property="deleteFlag" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="create_by" jdbcType="BIGINT" property="createBy" />
+    <result column="update_by" jdbcType="BIGINT" property="updateBy" />
+  </resultMap>
+  
+  <sql id="Example_Where_Clause">
+    <where>
+      <foreach collection="oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  
+  <sql id="Update_By_Example_Where_Clause">
+    <where>
+      <foreach collection="example.oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  
+  <sql id="Base_Column_List">
+    id, work_order_no, production_order_id, work_order_type, material_id, quantity, status, 
+    priority, assigned_to, start_time, complete_time, estimated_hours, actual_hours, cost, 
+    labor_cost, material_cost, remark, complete_images, process_images, logistics_no, 
+    tenant_id, delete_flag, create_time, update_time, create_by, update_by
+  </sql>
+  
+  <select id="selectByExample" parameterType="com.jsh.erp.datasource.entities.WorkOrderExample" resultMap="BaseResultMap">
+    select
+    <if test="distinct">
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from jsh_work_order
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null">
+      order by ${orderByClause}
+    </if>
+  </select>
+  
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from jsh_work_order
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from jsh_work_order
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  
+  <delete id="deleteByExample" parameterType="com.jsh.erp.datasource.entities.WorkOrderExample">
+    delete from jsh_work_order
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  
+  <insert id="insert" parameterType="com.jsh.erp.datasource.entities.WorkOrder">
+    <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Long">
+      SELECT LAST_INSERT_ID()
+    </selectKey>
+    insert into jsh_work_order (work_order_no, production_order_id, work_order_type, 
+      material_id, quantity, status, 
+      priority, assigned_to, start_time, 
+      complete_time, estimated_hours, actual_hours, 
+      cost, labor_cost, material_cost, 
+      remark, complete_images, process_images, 
+      logistics_no, tenant_id, delete_flag, 
+      create_time, update_time, create_by, 
+      update_by)
+    values (#{workOrderNo,jdbcType=VARCHAR}, #{productionOrderId,jdbcType=BIGINT}, #{workOrderType,jdbcType=VARCHAR}, 
+      #{materialId,jdbcType=BIGINT}, #{quantity,jdbcType=DECIMAL}, #{status,jdbcType=VARCHAR}, 
+      #{priority,jdbcType=VARCHAR}, #{assignedTo,jdbcType=BIGINT}, #{startTime,jdbcType=TIMESTAMP}, 
+      #{completeTime,jdbcType=TIMESTAMP}, #{estimatedHours,jdbcType=DECIMAL}, #{actualHours,jdbcType=DECIMAL}, 
+      #{cost,jdbcType=DECIMAL}, #{laborCost,jdbcType=DECIMAL}, #{materialCost,jdbcType=DECIMAL}, 
+      #{remark,jdbcType=VARCHAR}, #{completeImages,jdbcType=VARCHAR}, #{processImages,jdbcType=VARCHAR}, 
+      #{logisticsNo,jdbcType=VARCHAR}, #{tenantId,jdbcType=BIGINT}, #{deleteFlag,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{updateTime,jdbcType=TIMESTAMP}, #{createBy,jdbcType=BIGINT}, 
+      #{updateBy,jdbcType=BIGINT})
+  </insert>
+  
+  <insert id="insertSelective" parameterType="com.jsh.erp.datasource.entities.WorkOrder">
+    <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Long">
+      SELECT LAST_INSERT_ID()
+    </selectKey>
+    insert into jsh_work_order
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="workOrderNo != null">
+        work_order_no,
+      </if>
+      <if test="productionOrderId != null">
+        production_order_id,
+      </if>
+      <if test="workOrderType != null">
+        work_order_type,
+      </if>
+      <if test="materialId != null">
+        material_id,
+      </if>
+      <if test="quantity != null">
+        quantity,
+      </if>
+      <if test="status != null">
+        status,
+      </if>
+      <if test="priority != null">
+        priority,
+      </if>
+      <if test="assignedTo != null">
+        assigned_to,
+      </if>
+      <if test="startTime != null">
+        start_time,
+      </if>
+      <if test="completeTime != null">
+        complete_time,
+      </if>
+      <if test="estimatedHours != null">
+        estimated_hours,
+      </if>
+      <if test="actualHours != null">
+        actual_hours,
+      </if>
+      <if test="cost != null">
+        cost,
+      </if>
+      <if test="laborCost != null">
+        labor_cost,
+      </if>
+      <if test="materialCost != null">
+        material_cost,
+      </if>
+      <if test="remark != null">
+        remark,
+      </if>
+      <if test="completeImages != null">
+        complete_images,
+      </if>
+      <if test="processImages != null">
+        process_images,
+      </if>
+      <if test="logisticsNo != null">
+        logistics_no,
+      </if>
+      <if test="tenantId != null">
+        tenant_id,
+      </if>
+      <if test="deleteFlag != null">
+        delete_flag,
+      </if>
+      <if test="createTime != null">
+        create_time,
+      </if>
+      <if test="updateTime != null">
+        update_time,
+      </if>
+      <if test="createBy != null">
+        create_by,
+      </if>
+      <if test="updateBy != null">
+        update_by,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="workOrderNo != null">
+        #{workOrderNo,jdbcType=VARCHAR},
+      </if>
+      <if test="productionOrderId != null">
+        #{productionOrderId,jdbcType=BIGINT},
+      </if>
+      <if test="workOrderType != null">
+        #{workOrderType,jdbcType=VARCHAR},
+      </if>
+      <if test="materialId != null">
+        #{materialId,jdbcType=BIGINT},
+      </if>
+      <if test="quantity != null">
+        #{quantity,jdbcType=DECIMAL},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="priority != null">
+        #{priority,jdbcType=VARCHAR},
+      </if>
+      <if test="assignedTo != null">
+        #{assignedTo,jdbcType=BIGINT},
+      </if>
+      <if test="startTime != null">
+        #{startTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="completeTime != null">
+        #{completeTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="estimatedHours != null">
+        #{estimatedHours,jdbcType=DECIMAL},
+      </if>
+      <if test="actualHours != null">
+        #{actualHours,jdbcType=DECIMAL},
+      </if>
+      <if test="cost != null">
+        #{cost,jdbcType=DECIMAL},
+      </if>
+      <if test="laborCost != null">
+        #{laborCost,jdbcType=DECIMAL},
+      </if>
+      <if test="materialCost != null">
+        #{materialCost,jdbcType=DECIMAL},
+      </if>
+      <if test="remark != null">
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="completeImages != null">
+        #{completeImages,jdbcType=VARCHAR},
+      </if>
+      <if test="processImages != null">
+        #{processImages,jdbcType=VARCHAR},
+      </if>
+      <if test="logisticsNo != null">
+        #{logisticsNo,jdbcType=VARCHAR},
+      </if>
+      <if test="tenantId != null">
+        #{tenantId,jdbcType=BIGINT},
+      </if>
+      <if test="deleteFlag != null">
+        #{deleteFlag,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createBy != null">
+        #{createBy,jdbcType=BIGINT},
+      </if>
+      <if test="updateBy != null">
+        #{updateBy,jdbcType=BIGINT},
+      </if>
+    </trim>
+  </insert>
+  
+  <select id="countByExample" parameterType="com.jsh.erp.datasource.entities.WorkOrderExample" resultType="java.lang.Long">
+    select count(*) from jsh_work_order
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  
+  <update id="updateByExampleSelective" parameterType="map">
+    update jsh_work_order
+    <set>
+      <if test="record.id != null">
+        id = #{record.id,jdbcType=BIGINT},
+      </if>
+      <if test="record.workOrderNo != null">
+        work_order_no = #{record.workOrderNo,jdbcType=VARCHAR},
+      </if>
+      <if test="record.productionOrderId != null">
+        production_order_id = #{record.productionOrderId,jdbcType=BIGINT},
+      </if>
+      <if test="record.workOrderType != null">
+        work_order_type = #{record.workOrderType,jdbcType=VARCHAR},
+      </if>
+      <if test="record.materialId != null">
+        material_id = #{record.materialId,jdbcType=BIGINT},
+      </if>
+      <if test="record.quantity != null">
+        quantity = #{record.quantity,jdbcType=DECIMAL},
+      </if>
+      <if test="record.status != null">
+        status = #{record.status,jdbcType=VARCHAR},
+      </if>
+      <if test="record.priority != null">
+        priority = #{record.priority,jdbcType=VARCHAR},
+      </if>
+      <if test="record.assignedTo != null">
+        assigned_to = #{record.assignedTo,jdbcType=BIGINT},
+      </if>
+      <if test="record.startTime != null">
+        start_time = #{record.startTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.completeTime != null">
+        complete_time = #{record.completeTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.estimatedHours != null">
+        estimated_hours = #{record.estimatedHours,jdbcType=DECIMAL},
+      </if>
+      <if test="record.actualHours != null">
+        actual_hours = #{record.actualHours,jdbcType=DECIMAL},
+      </if>
+      <if test="record.cost != null">
+        cost = #{record.cost,jdbcType=DECIMAL},
+      </if>
+      <if test="record.laborCost != null">
+        labor_cost = #{record.laborCost,jdbcType=DECIMAL},
+      </if>
+      <if test="record.materialCost != null">
+        material_cost = #{record.materialCost,jdbcType=DECIMAL},
+      </if>
+      <if test="record.remark != null">
+        remark = #{record.remark,jdbcType=VARCHAR},
+      </if>
+      <if test="record.completeImages != null">
+        complete_images = #{record.completeImages,jdbcType=VARCHAR},
+      </if>
+      <if test="record.processImages != null">
+        process_images = #{record.processImages,jdbcType=VARCHAR},
+      </if>
+      <if test="record.logisticsNo != null">
+        logistics_no = #{record.logisticsNo,jdbcType=VARCHAR},
+      </if>
+      <if test="record.tenantId != null">
+        tenant_id = #{record.tenantId,jdbcType=BIGINT},
+      </if>
+      <if test="record.deleteFlag != null">
+        delete_flag = #{record.deleteFlag,jdbcType=VARCHAR},
+      </if>
+      <if test="record.createTime != null">
+        create_time = #{record.createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.updateTime != null">
+        update_time = #{record.updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.createBy != null">
+        create_by = #{record.createBy,jdbcType=BIGINT},
+      </if>
+      <if test="record.updateBy != null">
+        update_by = #{record.updateBy,jdbcType=BIGINT},
+      </if>
+    </set>
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  
+  <update id="updateByExample" parameterType="map">
+    update jsh_work_order
+    set id = #{record.id,jdbcType=BIGINT},
+      work_order_no = #{record.workOrderNo,jdbcType=VARCHAR},
+      production_order_id = #{record.productionOrderId,jdbcType=BIGINT},
+      work_order_type = #{record.workOrderType,jdbcType=VARCHAR},
+      material_id = #{record.materialId,jdbcType=BIGINT},
+      quantity = #{record.quantity,jdbcType=DECIMAL},
+      status = #{record.status,jdbcType=VARCHAR},
+      priority = #{record.priority,jdbcType=VARCHAR},
+      assigned_to = #{record.assignedTo,jdbcType=BIGINT},
+      start_time = #{record.startTime,jdbcType=TIMESTAMP},
+      complete_time = #{record.completeTime,jdbcType=TIMESTAMP},
+      estimated_hours = #{record.estimatedHours,jdbcType=DECIMAL},
+      actual_hours = #{record.actualHours,jdbcType=DECIMAL},
+      cost = #{record.cost,jdbcType=DECIMAL},
+      labor_cost = #{record.laborCost,jdbcType=DECIMAL},
+      material_cost = #{record.materialCost,jdbcType=DECIMAL},
+      remark = #{record.remark,jdbcType=VARCHAR},
+      complete_images = #{record.completeImages,jdbcType=VARCHAR},
+      process_images = #{record.processImages,jdbcType=VARCHAR},
+      logistics_no = #{record.logisticsNo,jdbcType=VARCHAR},
+      tenant_id = #{record.tenantId,jdbcType=BIGINT},
+      delete_flag = #{record.deleteFlag,jdbcType=VARCHAR},
+      create_time = #{record.createTime,jdbcType=TIMESTAMP},
+      update_time = #{record.updateTime,jdbcType=TIMESTAMP},
+      create_by = #{record.createBy,jdbcType=BIGINT},
+      update_by = #{record.updateBy,jdbcType=BIGINT}
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  
+  <update id="updateByPrimaryKeySelective" parameterType="com.jsh.erp.datasource.entities.WorkOrder">
+    update jsh_work_order
+    <set>
+      <if test="workOrderNo != null">
+        work_order_no = #{workOrderNo,jdbcType=VARCHAR},
+      </if>
+      <if test="productionOrderId != null">
+        production_order_id = #{productionOrderId,jdbcType=BIGINT},
+      </if>
+      <if test="workOrderType != null">
+        work_order_type = #{workOrderType,jdbcType=VARCHAR},
+      </if>
+      <if test="materialId != null">
+        material_id = #{materialId,jdbcType=BIGINT},
+      </if>
+      <if test="quantity != null">
+        quantity = #{quantity,jdbcType=DECIMAL},
+      </if>
+      <if test="status != null">
+        status = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="priority != null">
+        priority = #{priority,jdbcType=VARCHAR},
+      </if>
+      <if test="assignedTo != null">
+        assigned_to = #{assignedTo,jdbcType=BIGINT},
+      </if>
+      <if test="startTime != null">
+        start_time = #{startTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="completeTime != null">
+        complete_time = #{completeTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="estimatedHours != null">
+        estimated_hours = #{estimatedHours,jdbcType=DECIMAL},
+      </if>
+      <if test="actualHours != null">
+        actual_hours = #{actualHours,jdbcType=DECIMAL},
+      </if>
+      <if test="cost != null">
+        cost = #{cost,jdbcType=DECIMAL},
+      </if>
+      <if test="laborCost != null">
+        labor_cost = #{laborCost,jdbcType=DECIMAL},
+      </if>
+      <if test="materialCost != null">
+        material_cost = #{materialCost,jdbcType=DECIMAL},
+      </if>
+      <if test="remark != null">
+        remark = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="completeImages != null">
+        complete_images = #{completeImages,jdbcType=VARCHAR},
+      </if>
+      <if test="processImages != null">
+        process_images = #{processImages,jdbcType=VARCHAR},
+      </if>
+      <if test="logisticsNo != null">
+        logistics_no = #{logisticsNo,jdbcType=VARCHAR},
+      </if>
+      <if test="tenantId != null">
+        tenant_id = #{tenantId,jdbcType=BIGINT},
+      </if>
+      <if test="deleteFlag != null">
+        delete_flag = #{deleteFlag,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        update_time = #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createBy != null">
+        create_by = #{createBy,jdbcType=BIGINT},
+      </if>
+      <if test="updateBy != null">
+        update_by = #{updateBy,jdbcType=BIGINT},
+      </if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  
+  <update id="updateByPrimaryKey" parameterType="com.jsh.erp.datasource.entities.WorkOrder">
+    update jsh_work_order
+    set work_order_no = #{workOrderNo,jdbcType=VARCHAR},
+      production_order_id = #{productionOrderId,jdbcType=BIGINT},
+      work_order_type = #{workOrderType,jdbcType=VARCHAR},
+      material_id = #{materialId,jdbcType=BIGINT},
+      quantity = #{quantity,jdbcType=DECIMAL},
+      status = #{status,jdbcType=VARCHAR},
+      priority = #{priority,jdbcType=VARCHAR},
+      assigned_to = #{assignedTo,jdbcType=BIGINT},
+      start_time = #{startTime,jdbcType=TIMESTAMP},
+      complete_time = #{completeTime,jdbcType=TIMESTAMP},
+      estimated_hours = #{estimatedHours,jdbcType=DECIMAL},
+      actual_hours = #{actualHours,jdbcType=DECIMAL},
+      cost = #{cost,jdbcType=DECIMAL},
+      labor_cost = #{laborCost,jdbcType=DECIMAL},
+      material_cost = #{materialCost,jdbcType=DECIMAL},
+      remark = #{remark,jdbcType=VARCHAR},
+      complete_images = #{completeImages,jdbcType=VARCHAR},
+      process_images = #{processImages,jdbcType=VARCHAR},
+      logistics_no = #{logisticsNo,jdbcType=VARCHAR},
+      tenant_id = #{tenantId,jdbcType=BIGINT},
+      delete_flag = #{deleteFlag,jdbcType=VARCHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      update_time = #{updateTime,jdbcType=TIMESTAMP},
+      create_by = #{createBy,jdbcType=BIGINT},
+      update_by = #{updateBy,jdbcType=BIGINT}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+</mapper>
