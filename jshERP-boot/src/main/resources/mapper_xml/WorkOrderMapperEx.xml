@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jsh.erp.datasource.mappers.WorkOrderMapperEx">
+
+    <!-- 看板工单查询结果映射 -->
+    <resultMap id="KanbanWorkOrderResultMap" type="java.util.Map">
+        <result column="id" jdbcType="BIGINT" property="id" />
+        <result column="work_order_no" jdbcType="VARCHAR" property="workOrderNo" />
+        <result column="production_order_id" jdbcType="BIGINT" property="productionOrderId" />
+        <result column="work_type" jdbcType="VARCHAR" property="workType" />
+        <result column="status" jdbcType="VARCHAR" property="status" />
+        <result column="handler_id" jdbcType="BIGINT" property="handlerId" />
+        <result column="handler_name" jdbcType="VARCHAR" property="handlerName" />
+        <result column="cost" jdbcType="DECIMAL" property="cost" />
+        <result column="estimated_hours" jdbcType="DECIMAL" property="estimatedHours" />
+        <result column="actual_hours" jdbcType="DECIMAL" property="actualHours" />
+        <result column="start_time" jdbcType="TIMESTAMP" property="startTime" />
+        <result column="complete_time" jdbcType="TIMESTAMP" property="completeTime" />
+        <result column="complete_images" jdbcType="VARCHAR" property="completeImages" />
+        <result column="logistics_no" jdbcType="VARCHAR" property="logisticsNo" />
+        <result column="remark" jdbcType="VARCHAR" property="remark" />
+        <result column="quality_notes" jdbcType="VARCHAR" property="qualityNotes" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+        <!-- 关联的产品信息 -->
+        <result column="material_name" jdbcType="VARCHAR" property="materialName" />
+        <result column="material_img_url" jdbcType="VARCHAR" property="materialImgUrl" />
+        <result column="material_standard" jdbcType="VARCHAR" property="materialStandard" />
+        <result column="material_model" jdbcType="VARCHAR" property="materialModel" />
+        <result column="material_color" jdbcType="VARCHAR" property="materialColor" />
+        <!-- 关联的用户信息 -->
+        <result column="user_real_name" jdbcType="VARCHAR" property="userRealName" />
+        <result column="user_username" jdbcType="VARCHAR" property="userUsername" />
+    </resultMap>
+
+    <!-- 看板工单查询 - 关联产品和用户信息 -->
+    <select id="selectWorkOrderListForKanban" resultMap="KanbanWorkOrderResultMap">
+        SELECT 
+            wo.id,
+            wo.work_order_no,
+            wo.production_order_id,
+            wo.work_type,
+            wo.status,
+            wo.handler_id,
+            wo.handler_name,
+            wo.cost,
+            wo.estimated_hours,
+            wo.actual_hours,
+            wo.start_time,
+            wo.complete_time,
+            wo.complete_images,
+            wo.logistics_no,
+            wo.remark,
+            wo.quality_notes,
+            wo.create_time,
+            wo.update_time,
+            <!-- 产品信息 -->
+            m.name AS material_name,
+            m.img_name AS material_img_url,
+            m.standard AS material_standard,
+            m.model AS material_model,
+            m.color AS material_color,
+            <!-- 用户信息 -->
+            u.username AS user_username,
+            p.name AS user_real_name
+        FROM jsh_work_order wo
+        <!-- 关联生产订单获取产品信息 -->
+        LEFT JOIN jsh_production_order po ON wo.production_order_id = po.id 
+            AND IFNULL(po.delete_flag, '0') != '1'
+        <!-- 关联产品表获取产品详细信息 -->
+        LEFT JOIN jsh_material m ON po.material_id = m.id 
+            AND IFNULL(m.delete_flag, '0') != '1'
+        <!-- 关联用户表获取处理人信息 -->
+        LEFT JOIN jsh_user u ON wo.handler_id = u.id 
+            AND IFNULL(u.delete_flag, '0') != '1'
+        <!-- 关联人员表获取真实姓名 -->
+        LEFT JOIN jsh_person p ON u.id = p.user_id 
+            AND IFNULL(p.delete_flag, '0') != '1'
+        WHERE 1=1
+        <!-- 状态筛选 -->
+        <if test="status != null and status != ''">
+            AND wo.status = #{status}
+        </if>
+        <!-- 工单类型筛选 -->
+        <if test="type != null and type != ''">
+            AND wo.work_type = #{type}
+        </if>
+        <!-- 多租户数据隔离 -->
+        <if test="tenantId != null">
+            AND wo.tenant_id = #{tenantId}
+        </if>
+        <!-- 逻辑删除过滤 -->
+        AND IFNULL(wo.delete_flag, '0') != '1'
+        <!-- 排序：优先级为状态 > 创建时间 -->
+        ORDER BY 
+            CASE wo.status 
+                WHEN 'PENDING' THEN 1
+                WHEN 'IN_PROGRESS' THEN 2
+                WHEN 'COMPLETED' THEN 3
+                ELSE 4
+            END,
+            wo.create_time DESC
+    </select>
+
+    <!-- 根据条件查询工单列表（分页） -->
+    <select id="selectByCondition" resultType="com.jsh.erp.datasource.entities.WorkOrder">
+        SELECT wo.*
+        FROM jsh_work_order wo
+        WHERE 1=1
+        <if test="workOrderNo != null and workOrderNo != ''">
+            <bind name="bindWorkOrderNo" value="'%' + workOrderNo + '%'"/>
+            AND wo.work_order_no LIKE #{bindWorkOrderNo}
+        </if>
+        <if test="productionOrderId != null">
+            AND wo.production_order_id = #{productionOrderId}
+        </if>
+        <if test="workType != null and workType != ''">
+            AND wo.work_type = #{workType}
+        </if>
+        <if test="status != null and status != ''">
+            AND wo.status = #{status}
+        </if>
+        <if test="handlerId != null">
+            AND wo.handler_id = #{handlerId}
+        </if>
+        <if test="beginTime != null and beginTime != ''">
+            AND wo.create_time >= #{beginTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND wo.create_time &lt;= #{endTime}
+        </if>
+        <if test="tenantId != null">
+            AND wo.tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(wo.delete_flag, '0') != '1'
+        ORDER BY wo.id DESC
+        <if test="offset != null and rows != null">
+            LIMIT #{offset}, #{rows}
+        </if>
+    </select>
+
+    <!-- 根据条件统计工单数量 -->
+    <select id="countByCondition" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM jsh_work_order wo
+        WHERE 1=1
+        <if test="workOrderNo != null and workOrderNo != ''">
+            <bind name="bindWorkOrderNo" value="'%' + workOrderNo + '%'"/>
+            AND wo.work_order_no LIKE #{bindWorkOrderNo}
+        </if>
+        <if test="productionOrderId != null">
+            AND wo.production_order_id = #{productionOrderId}
+        </if>
+        <if test="workType != null and workType != ''">
+            AND wo.work_type = #{workType}
+        </if>
+        <if test="status != null and status != ''">
+            AND wo.status = #{status}
+        </if>
+        <if test="handlerId != null">
+            AND wo.handler_id = #{handlerId}
+        </if>
+        <if test="beginTime != null and beginTime != ''">
+            AND wo.create_time >= #{beginTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND wo.create_time &lt;= #{endTime}
+        </if>
+        <if test="tenantId != null">
+            AND wo.tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(wo.delete_flag, '0') != '1'
+    </select>
+
+    <!-- 根据工单号查询工单 -->
+    <select id="selectByWorkOrderNo" resultType="com.jsh.erp.datasource.entities.WorkOrder">
+        SELECT wo.*
+        FROM jsh_work_order wo
+        WHERE wo.work_order_no = #{workOrderNo}
+        <if test="tenantId != null">
+            AND wo.tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(wo.delete_flag, '0') != '1'
+        LIMIT 1
+    </select>
+
+    <!-- 根据生产订单ID查询工单列表 -->
+    <select id="selectByProductionOrderId" resultType="com.jsh.erp.datasource.entities.WorkOrder">
+        SELECT wo.*
+        FROM jsh_work_order wo
+        WHERE wo.production_order_id = #{productionOrderId}
+        <if test="tenantId != null">
+            AND wo.tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(wo.delete_flag, '0') != '1'
+        ORDER BY wo.id DESC
+    </select>
+
+    <!-- 根据处理人ID查询工单列表 -->
+    <select id="selectByHandlerId" resultType="com.jsh.erp.datasource.entities.WorkOrder">
+        SELECT wo.*
+        FROM jsh_work_order wo
+        WHERE wo.handler_id = #{handlerId}
+        <if test="tenantId != null">
+            AND wo.tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(wo.delete_flag, '0') != '1'
+        ORDER BY wo.id DESC
+    </select>
+
+    <!-- 根据工单类型查询工单列表 -->
+    <select id="selectByWorkType" resultType="com.jsh.erp.datasource.entities.WorkOrder">
+        SELECT wo.*
+        FROM jsh_work_order wo
+        WHERE wo.work_type = #{workType}
+        <if test="tenantId != null">
+            AND wo.tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(wo.delete_flag, '0') != '1'
+        ORDER BY wo.id DESC
+    </select>
+
+    <!-- 根据状态查询工单列表 -->
+    <select id="selectByStatus" resultType="com.jsh.erp.datasource.entities.WorkOrder">
+        SELECT wo.*
+        FROM jsh_work_order wo
+        WHERE wo.status = #{status}
+        <if test="tenantId != null">
+            AND wo.tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(wo.delete_flag, '0') != '1'
+        ORDER BY wo.id DESC
+    </select>
+
+    <!-- 更新工单状态 -->
+    <update id="updateStatus">
+        UPDATE jsh_work_order
+        SET status = #{status},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 更新工单处理人 -->
+    <update id="updateHandler">
+        UPDATE jsh_work_order
+        SET handler_id = #{handlerId},
+            handler_name = #{handlerName},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 更新工单成本 -->
+    <update id="updateCost">
+        UPDATE jsh_work_order
+        SET cost = #{cost},
+            labor_cost = #{laborCost},
+            material_cost = #{materialCost},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 更新工单工时 -->
+    <update id="updateWorkHours">
+        UPDATE jsh_work_order
+        SET actual_hours = #{actualHours},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 批量删除工单（逻辑删除） -->
+    <update id="batchDeleteByIds">
+        UPDATE jsh_work_order
+        SET delete_flag = '1',
+            update_time = #{updateTime},
+            update_by = #{updater}
+        WHERE id IN
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 查询当日最大工单号（用于生成新工单号） -->
+    <select id="findMaxWorkOrderNoByPrefix" resultType="java.lang.String">
+        SELECT MAX(work_order_no)
+        FROM jsh_work_order
+        WHERE work_order_no LIKE CONCAT(#{prefix}, '%')
+        AND IFNULL(delete_flag, '0') != '1'
+    </select>
+
+    <!-- 统计各状态的工单数量 -->
+    <select id="getStatusStatistics" resultType="java.util.Map">
+        SELECT 
+            status,
+            COUNT(1) AS count
+        FROM jsh_work_order
+        WHERE 1=1
+        <if test="tenantId != null">
+            AND tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(delete_flag, '0') != '1'
+        GROUP BY status
+        ORDER BY status
+    </select>
+
+    <!-- 统计各工单类型的数量 -->
+    <select id="getWorkTypeStatistics" resultType="java.util.Map">
+        SELECT 
+            work_type,
+            COUNT(1) AS count
+        FROM jsh_work_order
+        WHERE 1=1
+        <if test="tenantId != null">
+            AND tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(delete_flag, '0') != '1'
+        GROUP BY work_type
+        ORDER BY work_type
+    </select>
+
+    <!-- 查询工单的成本统计 -->
+    <select id="getCostStatistics" resultType="java.util.Map">
+        SELECT 
+            work_type,
+            COUNT(1) AS count,
+            IFNULL(SUM(cost), 0) AS totalCost,
+            IFNULL(SUM(labor_cost), 0) AS totalLaborCost,
+            IFNULL(SUM(material_cost), 0) AS totalMaterialCost
+        FROM jsh_work_order
+        WHERE 1=1
+        <if test="beginTime != null and beginTime != ''">
+            AND create_time >= #{beginTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_time &lt;= #{endTime}
+        </if>
+        <if test="tenantId != null">
+            AND tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(delete_flag, '0') != '1'
+        GROUP BY work_type
+        ORDER BY work_type
+    </select>
+
+    <!-- 查询工单的工时统计 -->
+    <select id="getWorkHoursStatistics" resultType="java.util.Map">
+        SELECT 
+            work_type,
+            COUNT(1) AS count,
+            IFNULL(SUM(estimated_hours), 0) AS totalEstimatedHours,
+            IFNULL(SUM(actual_hours), 0) AS totalActualHours
+        FROM jsh_work_order
+        WHERE 1=1
+        <if test="beginTime != null and beginTime != ''">
+            AND create_time >= #{beginTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_time &lt;= #{endTime}
+        </if>
+        <if test="tenantId != null">
+            AND tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(delete_flag, '0') != '1'
+        GROUP BY work_type
+        ORDER BY work_type
+    </select>
+
+    <!-- 根据处理人统计工单完成情况 -->
+    <select id="getHandlerStatistics" resultType="java.util.Map">
+        SELECT 
+            handler_id,
+            handler_name,
+            COUNT(1) AS totalCount,
+            SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS completedCount,
+            IFNULL(SUM(actual_hours), 0) AS totalActualHours
+        FROM jsh_work_order
+        WHERE handler_id IS NOT NULL
+        <if test="beginTime != null and beginTime != ''">
+            AND create_time >= #{beginTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_time &lt;= #{endTime}
+        </if>
+        <if test="tenantId != null">
+            AND tenant_id = #{tenantId}
+        </if>
+        AND IFNULL(delete_flag, '0') != '1'
+        GROUP BY handler_id, handler_name
+        ORDER BY completedCount DESC, totalActualHours DESC
+    </select>
+
+</mapper>

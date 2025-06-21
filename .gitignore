@@ -38,3 +38,6 @@ Thumbs.db
 *.war
 *.zip
 *.tar.gz
+
+# YoYo AI version control directory
+.yoyo/

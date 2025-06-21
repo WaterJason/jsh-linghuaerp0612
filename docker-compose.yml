@@ -30,7 +30,8 @@ services:
     volumes:
       - ./volumes/mysql:/var/lib/mysql
       - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
-      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro    networks:
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+    networks:
       - jsherp_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
