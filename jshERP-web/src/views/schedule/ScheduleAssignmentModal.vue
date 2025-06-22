@@ -135,8 +135,8 @@
 </template>
 
 <script>
-import moment from 'moment'
-import { getAction, postAction } from '@/api/manage'
+import dayjs from 'dayjs'
+import { getAction, postAction, putAction } from '@/api/manage'
 
 export default {
   name: 'ScheduleAssignmentModal',
@@ -181,7 +181,7 @@ export default {
     },
     
     selectedDateMoment() {
-      return this.selectedDate ? moment(this.selectedDate) : moment()
+      return this.selectedDate ? dayjs(this.selectedDate) : dayjs()
     }
   },
   
@@ -212,14 +212,14 @@ export default {
         if (this.isEdit && this.assignmentData) {
           // 编辑模式：填充现有数据
           this.form.setFieldsValue({
-            scheduleDate: moment(this.assignmentData.scheduleDate),
+            scheduleDate: dayjs(this.assignmentData.scheduleDate),
             shiftId: this.assignmentData.shiftId,
             userId: this.assignmentData.userId,
             status: this.assignmentData.status,
             notes: this.assignmentData.notes,
             workHours: this.assignmentData.workHours,
-            checkInTime: this.assignmentData.checkInTime ? moment(this.assignmentData.checkInTime, 'HH:mm') : null,
-            checkOutTime: this.assignmentData.checkOutTime ? moment(this.assignmentData.checkOutTime, 'HH:mm') : null
+            checkInTime: this.assignmentData.checkInTime ? dayjs(this.assignmentData.checkInTime, 'HH:mm') : null,
+            checkOutTime: this.assignmentData.checkOutTime ? dayjs(this.assignmentData.checkOutTime, 'HH:mm') : null
           })
         } else {
           // 新增模式：设置默认值
@@ -254,10 +254,9 @@ export default {
         const submitData = {
           scheduleDate: values.scheduleDate.format('YYYY-MM-DD'),
           shiftId: values.shiftId,
-          userId: values.userId,
-          userName: this.getUserName(values.userId),
+          employeeId: values.userId,
           status: values.status,
-          notes: values.notes || null
+          remark: values.notes || null
         }
         
         // 编辑模式下添加额外字段
@@ -275,11 +274,13 @@ export default {
         }
         
         // 提交数据
-        const apiUrl = this.isEdit 
-          ? '/api/plugin/calendar-schedule/assignment/update'
-          : '/api/plugin/calendar-schedule/assignment/add'
+        const apiUrl = this.isEdit
+          ? `/schedule/entry/${this.model.id}`
+          : '/schedule/entry'
         
-        const res = await postAction(apiUrl, submitData)
+        const res = this.isEdit
+          ? await putAction(apiUrl, submitData)
+          : await postAction(apiUrl, submitData)
         
         if (res.code === 200) {
           this.$message.success(this.isEdit ? '更新成功' : '新增成功')
@@ -313,7 +314,7 @@ export default {
         }
         
         // TODO: 实现冲突检查API
-        // const res = await getAction('/api/plugin/calendar-schedule/assignment/check-conflict', params)
+        // const res = await getAction('/schedule/entry/check-conflict', params)
         
         // 临时模拟冲突检查
         const hasConflict = false

@@ -192,7 +192,7 @@ public class SystemConfigService {
             orgName = FileUtils.getFileName(orgName);
 
             // Validate file extension to allow only specific types
-            String[] allowedExtensions = {".gif", ".jpg", ".jpeg", ".png", ".pdf", ".txt",".doc",".docx",".xls",".xlsx",
+            String[] allowedExtensions = {".gif", ".jpg", ".jpeg", ".png", ".webp", ".pdf", ".txt",".doc",".docx",".xls",".xlsx",
                     ".ppt",".pptx",".zip",".rar",".mp3",".mp4",".avi"};
             boolean isValidExtension = false;
             for (String ext : allowedExtensions) {
@@ -258,7 +258,7 @@ public class SystemConfigService {
         orgName = FileUtils.getFileName(orgName);
 
         // Validate file extension to allow only specific types
-        String[] allowedExtensions = {".gif", ".jpg", ".jpeg", ".png", ".pdf", ".txt",".doc",".docx",".xls",".xlsx",
+        String[] allowedExtensions = {".gif", ".jpg", ".jpeg", ".png", ".webp", ".pdf", ".txt",".doc",".docx",".xls",".xlsx",
                 ".ppt",".pptx",".zip",".rar",".mp3",".mp4",".avi"};
         boolean isValidExtension = false;
         for (String ext : allowedExtensions) {
@@ -293,8 +293,8 @@ public class SystemConfigService {
             // 如果是图片-保存缩略图
             int index = fileName.lastIndexOf(".");
             String ext = fileName.substring(index + 1);
-            if(ext.contains("gif") || ext.contains("jpg") || ext.contains("jpeg") || ext.contains("png")
-                    || ext.contains("GIF") || ext.contains("JPG") || ext.contains("JPEG") || ext.contains("PNG")) {
+            if(ext.contains("gif") || ext.contains("jpg") || ext.contains("jpeg") || ext.contains("png") || ext.contains("webp")
+                    || ext.contains("GIF") || ext.contains("JPG") || ext.contains("JPEG") || ext.contains("PNG") || ext.contains("WEBP")) {
                 String fileUrl = getFileUrlAliOss(bizPath + "/" + fileName);
                 URL url = new URL(fileUrl);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();

@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jsh.erp.datasource.mappers.ProductionWorkOrderMapperEx">
+    
+    <!-- 扩展结果映射 -->
+    <resultMap id="WorkOrderExResultMap" type="com.jsh.erp.datasource.entities.ProductionWorkOrderEx">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="work_order_number" jdbcType="VARCHAR" property="workOrderNumber" />
+        <result column="work_order_name" jdbcType="VARCHAR" property="workOrderName" />
+        <result column="product_id" jdbcType="BIGINT" property="productId" />
+        <result column="product_name" jdbcType="VARCHAR" property="productName" />
+        <result column="product_spec" jdbcType="VARCHAR" property="productSpec" />
+        <result column="production_mode" jdbcType="VARCHAR" property="productionMode" />
+        <result column="production_type" jdbcType="VARCHAR" property="productionType" />
+        <result column="priority" jdbcType="VARCHAR" property="priority" />
+        <result column="production_reason" jdbcType="VARCHAR" property="productionReason" />
+        <result column="planned_quantity" jdbcType="DECIMAL" property="plannedQuantity" />
+        <result column="actual_quantity" jdbcType="DECIMAL" property="actualQuantity" />
+        <result column="unit_id" jdbcType="BIGINT" property="unitId" />
+        <result column="unit_name" jdbcType="VARCHAR" property="unitName" />
+        <result column="plan_start_time" jdbcType="TIMESTAMP" property="planStartTime" />
+        <result column="plan_end_time" jdbcType="TIMESTAMP" property="planEndTime" />
+        <result column="actual_start_time" jdbcType="TIMESTAMP" property="actualStartTime" />
+        <result column="actual_end_time" jdbcType="TIMESTAMP" property="actualEndTime" />
+        <result column="status" jdbcType="VARCHAR" property="status" />
+        <result column="workshop_id" jdbcType="BIGINT" property="workshopId" />
+        <result column="workshop_name" jdbcType="VARCHAR" property="workshopName" />
+        <result column="responsible_person" jdbcType="VARCHAR" property="responsiblePerson" />
+        <result column="estimated_cost" jdbcType="DECIMAL" property="estimatedCost" />
+        <result column="actual_cost" jdbcType="DECIMAL" property="actualCost" />
+        <result column="estimated_hours" jdbcType="DECIMAL" property="estimatedHours" />
+        <result column="actual_hours" jdbcType="DECIMAL" property="actualHours" />
+        <result column="quality_standard" jdbcType="VARCHAR" property="qualityStandard" />
+        <result column="remark" jdbcType="VARCHAR" property="remark" />
+        <result column="source_type" jdbcType="VARCHAR" property="sourceType" />
+        <result column="source_id" jdbcType="BIGINT" property="sourceId" />
+        <result column="source_number" jdbcType="VARCHAR" property="sourceNumber" />
+        <result column="tenant_id" jdbcType="BIGINT" property="tenantId" />
+        <result column="delete_flag" jdbcType="VARCHAR" property="deleteFlag" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="create_user" jdbcType="BIGINT" property="createUser" />
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+        <result column="update_user" jdbcType="BIGINT" property="updateUser" />
+        
+        <!-- 扩展字段 -->
+        <result column="material_name" jdbcType="VARCHAR" property="materialName" />
+        <result column="material_model" jdbcType="VARCHAR" property="materialModel" />
+        <result column="material_standard" jdbcType="VARCHAR" property="materialStandard" />
+        <result column="category_name" jdbcType="VARCHAR" property="categoryName" />
+        <result column="basic_unit" jdbcType="VARCHAR" property="basicUnit" />
+        <result column="ratio" jdbcType="DECIMAL" property="ratio" />
+        <result column="total_tasks" jdbcType="INTEGER" property="totalTasks" />
+        <result column="completed_tasks" jdbcType="INTEGER" property="completedTasks" />
+        <result column="pending_tasks" jdbcType="INTEGER" property="pendingTasks" />
+        <result column="in_progress_tasks" jdbcType="INTEGER" property="inProgressTasks" />
+        <result column="completion_rate" jdbcType="DECIMAL" property="completionRate" />
+        <result column="quality_rate" jdbcType="DECIMAL" property="qualityRate" />
+        <result column="cost_variance" jdbcType="DECIMAL" property="costVariance" />
+        <result column="schedule_variance" jdbcType="DECIMAL" property="scheduleVariance" />
+        <result column="create_user_name" jdbcType="VARCHAR" property="createUserName" />
+        <result column="update_user_name" jdbcType="VARCHAR" property="updateUserName" />
+        <result column="source_type_name" jdbcType="VARCHAR" property="sourceTypeName" />
+        <result column="source_info" jdbcType="VARCHAR" property="sourceInfo" />
+    </resultMap>
+
+    <!-- 根据条件查询生产工单列表 -->
+    <select id="selectByConditionWorkOrder" resultMap="WorkOrderExResultMap">
+        SELECT 
+            wo.*,
+            m.name AS material_name,
+            m.model AS material_model,
+            m.standard AS material_standard,
+            mc.name AS category_name,
+            u.name AS basic_unit,
+            u.ratio AS ratio,
+            IFNULL(task_stats.total_tasks, 0) AS total_tasks,
+            IFNULL(task_stats.completed_tasks, 0) AS completed_tasks,
+            IFNULL(task_stats.pending_tasks, 0) AS pending_tasks,
+            IFNULL(task_stats.in_progress_tasks, 0) AS in_progress_tasks,
+            CASE 
+                WHEN wo.planned_quantity > 0 THEN ROUND((wo.actual_quantity / wo.planned_quantity) * 100, 2)
+                ELSE 0 
+            END AS completion_rate,
+            CASE 
+                WHEN wo.estimated_cost > 0 THEN ROUND(((wo.actual_cost - wo.estimated_cost) / wo.estimated_cost) * 100, 2)
+                ELSE 0 
+            END AS cost_variance,
+            cu.username AS create_user_name,
+            uu.username AS update_user_name,
+            CASE wo.source_type
+                WHEN 'SALES_ORDER' THEN '销售订单'
+                WHEN 'STOCK_PLAN' THEN '库存计划'
+                WHEN 'MANUAL' THEN '手动创建'
+                ELSE wo.source_type
+            END AS source_type_name
+        FROM jsh_production_work_order wo
+        LEFT JOIN jsh_material m ON wo.product_id = m.id AND IFNULL(m.delete_flag, '0') != '1'
+        LEFT JOIN jsh_material_category mc ON m.category_id = mc.id AND IFNULL(mc.delete_flag, '0') != '1'
+        LEFT JOIN jsh_unit u ON wo.unit_id = u.id AND IFNULL(u.delete_flag, '0') != '1'
+        LEFT JOIN jsh_user cu ON wo.create_user = cu.id AND IFNULL(cu.delete_flag, '0') != '1'
+        LEFT JOIN jsh_user uu ON wo.update_user = uu.id AND IFNULL(uu.delete_flag, '0') != '1'
+        LEFT JOIN (
+            SELECT 
+                work_order_id,
+                COUNT(*) AS total_tasks,
+                SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed_tasks,
+                SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) AS pending_tasks,
+                SUM(CASE WHEN status = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS in_progress_tasks
+            FROM jsh_production_task 
+            WHERE IFNULL(delete_flag, '0') != '1'
+            GROUP BY work_order_id
+        ) task_stats ON wo.id = task_stats.work_order_id
+        WHERE 1=1
+        AND IFNULL(wo.delete_flag, '0') != '1'
+        <if test="workOrderNumber != null and workOrderNumber != ''">
+            <bind name="bindWorkOrderNumber" value="'%' + workOrderNumber + '%'"/>
+            AND wo.work_order_number LIKE #{bindWorkOrderNumber}
+        </if>
+        <if test="workOrderName != null and workOrderName != ''">
+            <bind name="bindWorkOrderName" value="'%' + workOrderName + '%'"/>
+            AND wo.work_order_name LIKE #{bindWorkOrderName}
+        </if>
+        <if test="productName != null and productName != ''">
+            <bind name="bindProductName" value="'%' + productName + '%'"/>
+            AND (wo.product_name LIKE #{bindProductName} OR m.name LIKE #{bindProductName})
+        </if>
+        <if test="productionMode != null and productionMode != ''">
+            AND wo.production_mode = #{productionMode}
+        </if>
+        <if test="productionType != null and productionType != ''">
+            AND wo.production_type = #{productionType}
+        </if>
+        <if test="priority != null and priority != ''">
+            AND wo.priority = #{priority}
+        </if>
+        <if test="status != null and status != ''">
+            AND wo.status = #{status}
+        </if>
+        <if test="responsiblePerson != null and responsiblePerson != ''">
+            <bind name="bindResponsiblePerson" value="'%' + responsiblePerson + '%'"/>
+            AND wo.responsible_person LIKE #{bindResponsiblePerson}
+        </if>
+        <if test="workshopName != null and workshopName != ''">
+            <bind name="bindWorkshopName" value="'%' + workshopName + '%'"/>
+            AND wo.workshop_name LIKE #{bindWorkshopName}
+        </if>
+        <if test="planStartTime != null">
+            AND wo.plan_start_time >= #{planStartTime}
+        </if>
+        <if test="planEndTime != null">
+            AND wo.plan_end_time &lt;= #{planEndTime}
+        </if>
+        <if test="sourceType != null and sourceType != ''">
+            AND wo.source_type = #{sourceType}
+        </if>
+        <if test="sourceNumber != null and sourceNumber != ''">
+            <bind name="bindSourceNumber" value="'%' + sourceNumber + '%'"/>
+            AND wo.source_number LIKE #{bindSourceNumber}
+        </if>
+        <if test="tenantId != null">
+            AND wo.tenant_id = #{tenantId}
+        </if>
+        ORDER BY wo.create_time DESC
+        <if test="offset != null and rows != null">
+            LIMIT #{offset}, #{rows}
+        </if>
+    </select>
+
+    <!-- 根据条件统计生产工单数量 -->
+    <select id="countByConditionWorkOrder" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM jsh_production_work_order wo
+        LEFT JOIN jsh_material m ON wo.product_id = m.id AND IFNULL(m.delete_flag, '0') != '1'
+        WHERE 1=1
+        AND IFNULL(wo.delete_flag, '0') != '1'
+        <if test="workOrderNumber != null and workOrderNumber != ''">
+            <bind name="bindWorkOrderNumber" value="'%' + workOrderNumber + '%'"/>
+            AND wo.work_order_number LIKE #{bindWorkOrderNumber}
+        </if>
+        <if test="workOrderName != null and workOrderName != ''">
+            <bind name="bindWorkOrderName" value="'%' + workOrderName + '%'"/>
+            AND wo.work_order_name LIKE #{bindWorkOrderName}
+        </if>
+        <if test="productName != null and productName != ''">
+            <bind name="bindProductName" value="'%' + productName + '%'"/>
+            AND (wo.product_name LIKE #{bindProductName} OR m.name LIKE #{bindProductName})
+        </if>
+        <if test="productionMode != null and productionMode != ''">
+            AND wo.production_mode = #{productionMode}
+        </if>
+        <if test="productionType != null and productionType != ''">
+            AND wo.production_type = #{productionType}
+        </if>
+        <if test="priority != null and priority != ''">
+            AND wo.priority = #{priority}
+        </if>
+        <if test="status != null and status != ''">
+            AND wo.status = #{status}
+        </if>
+        <if test="responsiblePerson != null and responsiblePerson != ''">
+            <bind name="bindResponsiblePerson" value="'%' + responsiblePerson + '%'"/>
+            AND wo.responsible_person LIKE #{bindResponsiblePerson}
+        </if>
+        <if test="workshopName != null and workshopName != ''">
+            <bind name="bindWorkshopName" value="'%' + workshopName + '%'"/>
+            AND wo.workshop_name LIKE #{bindWorkshopName}
+        </if>
+        <if test="planStartTime != null">
+            AND wo.plan_start_time >= #{planStartTime}
+        </if>
+        <if test="planEndTime != null">
+            AND wo.plan_end_time &lt;= #{planEndTime}
+        </if>
+        <if test="sourceType != null and sourceType != ''">
+            AND wo.source_type = #{sourceType}
+        </if>
+        <if test="sourceNumber != null and sourceNumber != ''">
+            <bind name="bindSourceNumber" value="'%' + sourceNumber + '%'"/>
+            AND wo.source_number LIKE #{bindSourceNumber}
+        </if>
+        <if test="tenantId != null">
+            AND wo.tenant_id = #{tenantId}
+        </if>
+    </select>
+
+    <!-- 根据ID查询工单详情 -->
+    <select id="findById" resultMap="WorkOrderExResultMap">
+        SELECT 
+            wo.*,
+            m.name AS material_name,
+            m.model AS material_model,
+            m.standard AS material_standard,
+            mc.name AS category_name,
+            u.name AS basic_unit,
+            u.ratio AS ratio,
+            cu.username AS create_user_name,
+            uu.username AS update_user_name
+        FROM jsh_production_work_order wo
+        LEFT JOIN jsh_material m ON wo.product_id = m.id AND IFNULL(m.delete_flag, '0') != '1'
+        LEFT JOIN jsh_material_category mc ON m.category_id = mc.id AND IFNULL(mc.delete_flag, '0') != '1'
+        LEFT JOIN jsh_unit u ON wo.unit_id = u.id AND IFNULL(u.delete_flag, '0') != '1'
+        LEFT JOIN jsh_user cu ON wo.create_user = cu.id AND IFNULL(cu.delete_flag, '0') != '1'
+        LEFT JOIN jsh_user uu ON wo.update_user = uu.id AND IFNULL(uu.delete_flag, '0') != '1'
+        WHERE wo.id = #{id}
+        AND IFNULL(wo.delete_flag, '0') != '1'
+    </select>
+
+    <!-- 根据工单编号查询工单 -->
+    <select id="findByWorkOrderNumber" resultType="com.jsh.erp.datasource.entities.ProductionWorkOrder">
+        SELECT * FROM jsh_production_work_order
+        WHERE work_order_number = #{workOrderNumber}
+        AND tenant_id = #{tenantId}
+        AND IFNULL(delete_flag, '0') != '1'
+    </select>
+
+    <!-- 批量删除生产工单 -->
+    <update id="batchDeleteWorkOrderByIds">
+        UPDATE jsh_production_work_order
+        SET delete_flag = '1',
+            update_time = #{updateTime},
+            update_user = #{updater}
+        WHERE id IN
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 更新工单状态 -->
+    <update id="updateWorkOrderStatus">
+        UPDATE jsh_production_work_order
+        SET status = #{status},
+            update_time = #{updateTime},
+            update_user = #{updateUser}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 更新工单实际数量 -->
+    <update id="updateActualQuantity">
+        UPDATE jsh_production_work_order
+        SET actual_quantity = #{actualQuantity},
+            update_time = #{updateTime},
+            update_user = #{updateUser}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 更新工单实际成本 -->
+    <update id="updateActualCost">
+        UPDATE jsh_production_work_order
+        SET actual_cost = #{actualCost},
+            update_time = #{updateTime},
+            update_user = #{updateUser}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 更新工单实际工时 -->
+    <update id="updateActualHours">
+        UPDATE jsh_production_work_order
+        SET actual_hours = #{actualHours},
+            update_time = #{updateTime},
+            update_user = #{updateUser}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 更新工单实际时间 -->
+    <update id="updateActualTime">
+        UPDATE jsh_production_work_order
+        SET actual_start_time = #{actualStartTime},
+            actual_end_time = #{actualEndTime},
+            update_time = #{updateTime},
+            update_user = #{updateUser}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 检查工单编号是否存在 -->
+    <select id="checkWorkOrderNumberExist" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM jsh_production_work_order
+        WHERE work_order_number = #{workOrderNumber}
+        AND tenant_id = #{tenantId}
+        AND IFNULL(delete_flag, '0') != '1'
+        <if test="id != null">
+            AND id != #{id}
+        </if>
+    </select>
+
+</mapper>

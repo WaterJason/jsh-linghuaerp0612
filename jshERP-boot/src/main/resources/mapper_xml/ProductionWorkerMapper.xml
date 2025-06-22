@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jsh.erp.datasource.mappers.ProductionWorkerMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.jsh.erp.datasource.entities.ProductionWorker">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="worker_number" property="workerNumber" jdbcType="VARCHAR"/>
+        <result column="worker_name" property="workerName" jdbcType="VARCHAR"/>
+        <result column="worker_type" property="workerType" jdbcType="VARCHAR"/>
+        <result column="gender" property="gender" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="email" property="email" jdbcType="VARCHAR"/>
+        <result column="id_card" property="idCard" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="specialty" property="specialty" jdbcType="VARCHAR"/>
+        <result column="skill_level" property="skillLevel" jdbcType="VARCHAR"/>
+        <result column="experience_years" property="experienceYears" jdbcType="INTEGER"/>
+        <result column="hourly_rate" property="hourlyRate" jdbcType="DECIMAL"/>
+        <result column="piece_rate" property="pieceRate" jdbcType="DECIMAL"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="availability_status" property="availabilityStatus" jdbcType="VARCHAR"/>
+        <result column="current_workload" property="currentWorkload" jdbcType="INTEGER"/>
+        <result column="max_workload" property="maxWorkload" jdbcType="INTEGER"/>
+        <result column="efficiency_rating" property="efficiencyRating" jdbcType="DECIMAL"/>
+        <result column="quality_rating" property="qualityRating" jdbcType="DECIMAL"/>
+        <result column="hire_date" property="hireDate" jdbcType="DATE"/>
+        <result column="department" property="department" jdbcType="VARCHAR"/>
+        <result column="supervisor_id" property="supervisorId" jdbcType="BIGINT"/>
+        <result column="supervisor_name" property="supervisorName" jdbcType="VARCHAR"/>
+        <result column="emergency_contact" property="emergencyContact" jdbcType="VARCHAR"/>
+        <result column="emergency_phone" property="emergencyPhone" jdbcType="VARCHAR"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="tenant_id" property="tenantId" jdbcType="BIGINT"/>
+        <result column="delete_flag" property="deleteFlag" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user" property="createUser" jdbcType="BIGINT"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="update_user" property="updateUser" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, worker_number, worker_name, worker_type, gender, phone, email, id_card, address,
+        specialty, skill_level, experience_years, hourly_rate, piece_rate, status,
+        availability_status, current_workload, max_workload, efficiency_rating, quality_rating,
+        hire_date, department, supervisor_id, supervisor_name, emergency_contact, emergency_phone,
+        remark, tenant_id, delete_flag, create_time, create_user, update_time, update_user
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            delete_flag = '0'
+            <if test="parameterMap.tenantId != null">
+                AND tenant_id = #{parameterMap.tenantId}
+            </if>
+            <if test="parameterMap.workerNumber != null and parameterMap.workerNumber != ''">
+                AND worker_number LIKE CONCAT('%', #{parameterMap.workerNumber}, '%')
+            </if>
+            <if test="parameterMap.workerName != null and parameterMap.workerName != ''">
+                AND worker_name LIKE CONCAT('%', #{parameterMap.workerName}, '%')
+            </if>
+            <if test="parameterMap.workerType != null and parameterMap.workerType != ''">
+                AND worker_type = #{parameterMap.workerType}
+            </if>
+            <if test="parameterMap.specialty != null and parameterMap.specialty != ''">
+                AND specialty LIKE CONCAT('%', #{parameterMap.specialty}, '%')
+            </if>
+            <if test="parameterMap.skillLevel != null and parameterMap.skillLevel != ''">
+                AND skill_level = #{parameterMap.skillLevel}
+            </if>
+            <if test="parameterMap.status != null and parameterMap.status != ''">
+                AND status = #{parameterMap.status}
+            </if>
+            <if test="parameterMap.availabilityStatus != null and parameterMap.availabilityStatus != ''">
+                AND availability_status = #{parameterMap.availabilityStatus}
+            </if>
+            <if test="parameterMap.department != null and parameterMap.department != ''">
+                AND department = #{parameterMap.department}
+            </if>
+            <if test="parameterMap.supervisorId != null">
+                AND supervisor_id = #{parameterMap.supervisorId}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据条件查询工人列表 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_production_worker
+        <include refid="Where_Clause"/>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据条件统计工人数量 -->
+    <select id="countByCondition" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM jsh_production_worker
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 根据工人编号查询工人信息 -->
+    <select id="selectByWorkerNumber" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_production_worker
+        WHERE worker_number = #{workerNumber}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+    </select>
+
+    <!-- 根据专业技能查询工人列表 -->
+    <select id="selectBySpecialty" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_production_worker
+        WHERE specialty LIKE CONCAT('%', #{specialty}, '%')
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+        ORDER BY skill_level DESC, efficiency_rating DESC
+    </select>
+
+    <!-- 根据技能等级查询工人列表 -->
+    <select id="selectBySkillLevel" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_production_worker
+        WHERE skill_level = #{skillLevel}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+        ORDER BY efficiency_rating DESC
+    </select>
+
+    <!-- 查询可用工人列表 -->
+    <select id="selectAvailableWorkers" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_production_worker
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+          AND availability_status = 'AVAILABLE'
+          AND current_workload &lt; max_workload
+        ORDER BY efficiency_rating DESC, quality_rating DESC
+    </select>
+
+    <!-- 查询忙碌工人列表 -->
+    <select id="selectBusyWorkers" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_production_worker
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+          AND availability_status = 'BUSY'
+        ORDER BY current_workload DESC
+    </select>
+
+    <!-- 根据部门查询工人列表 -->
+    <select id="selectByDepartment" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_production_worker
+        WHERE department = #{department}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+        ORDER BY skill_level DESC, efficiency_rating DESC
+    </select>
+
+    <!-- 更新工人可用状态 -->
+    <update id="updateAvailabilityStatus">
+        UPDATE jsh_production_worker
+        SET availability_status = #{availabilityStatus},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新工人工作负荷 -->
+    <update id="updateWorkload">
+        UPDATE jsh_production_worker
+        SET current_workload = #{currentWorkload},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新工人效率评级 -->
+    <update id="updateEfficiencyRating">
+        UPDATE jsh_production_worker
+        SET efficiency_rating = #{efficiencyRating},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新工人质量评级 -->
+    <update id="updateQualityRating">
+        UPDATE jsh_production_worker
+        SET quality_rating = #{qualityRating},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 批量更新工人状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE jsh_production_worker
+        SET status = #{status},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND delete_flag = '0'
+    </update>
+
+    <!-- 批量删除工人（软删除） -->
+    <update id="batchDelete">
+        UPDATE jsh_production_worker
+        SET delete_flag = '1',
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND delete_flag = '0'
+    </update>
+
+    <!-- 获取工人统计信息 -->
+    <select id="getWorkerStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as totalWorkers,
+            COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) as activeWorkers,
+            COUNT(CASE WHEN availability_status = 'AVAILABLE' THEN 1 END) as availableWorkers,
+            COUNT(CASE WHEN availability_status = 'BUSY' THEN 1 END) as busyWorkers,
+            COUNT(CASE WHEN availability_status = 'OFFLINE' THEN 1 END) as offlineWorkers,
+            AVG(efficiency_rating) as avgEfficiencyRating,
+            AVG(quality_rating) as avgQualityRating,
+            AVG(current_workload) as avgWorkload
+        FROM jsh_production_worker
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+    </select>
+
+    <!-- 根据技能等级统计工人数量 -->
+    <select id="getSkillLevelStatistics" resultType="java.util.Map">
+        SELECT 
+            skill_level as skillLevel,
+            COUNT(*) as count
+        FROM jsh_production_worker
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+        GROUP BY skill_level
+        ORDER BY 
+            CASE skill_level
+                WHEN 'EXPERT' THEN 1
+                WHEN 'SENIOR' THEN 2
+                WHEN 'INTERMEDIATE' THEN 3
+                WHEN 'JUNIOR' THEN 4
+                ELSE 5
+            END
+    </select>
+
+    <!-- 根据部门统计工人数量 -->
+    <select id="getDepartmentStatistics" resultType="java.util.Map">
+        SELECT 
+            department,
+            COUNT(*) as count
+        FROM jsh_production_worker
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+        GROUP BY department
+        ORDER BY count DESC
+    </select>
+
+    <!-- 根据可用状态统计工人数量 -->
+    <select id="getAvailabilityStatistics" resultType="java.util.Map">
+        SELECT 
+            availability_status as availabilityStatus,
+            COUNT(*) as count
+        FROM jsh_production_worker
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+        GROUP BY availability_status
+    </select>
+
+    <!-- 查询工人工作负荷排行 -->
+    <select id="getWorkloadRanking" resultType="java.util.Map">
+        SELECT 
+            id,
+            worker_number as workerNumber,
+            worker_name as workerName,
+            current_workload as currentWorkload,
+            max_workload as maxWorkload,
+            ROUND(current_workload * 100.0 / max_workload, 2) as workloadRate
+        FROM jsh_production_worker
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+        ORDER BY workloadRate DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询工人效率排行 -->
+    <select id="getEfficiencyRanking" resultType="java.util.Map">
+        SELECT 
+            id,
+            worker_number as workerNumber,
+            worker_name as workerName,
+            efficiency_rating as efficiencyRating,
+            specialty
+        FROM jsh_production_worker
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+        ORDER BY efficiency_rating DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询工人质量排行 -->
+    <select id="getQualityRanking" resultType="java.util.Map">
+        SELECT 
+            id,
+            worker_number as workerNumber,
+            worker_name as workerName,
+            quality_rating as qualityRating,
+            specialty
+        FROM jsh_production_worker
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+        ORDER BY quality_rating DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 根据专业技能推荐工人 -->
+    <select id="recommendWorkers" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_production_worker
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'ACTIVE'
+          AND availability_status = 'AVAILABLE'
+          AND specialty LIKE CONCAT('%', #{specialty}, '%')
+          AND current_workload &lt; max_workload
+          <if test="skillLevel != null and skillLevel != ''">
+              AND skill_level IN (
+                  <choose>
+                      <when test="skillLevel == 'JUNIOR'">
+                          'JUNIOR', 'INTERMEDIATE', 'SENIOR', 'EXPERT'
+                      </when>
+                      <when test="skillLevel == 'INTERMEDIATE'">
+                          'INTERMEDIATE', 'SENIOR', 'EXPERT'
+                      </when>
+                      <when test="skillLevel == 'SENIOR'">
+                          'SENIOR', 'EXPERT'
+                      </when>
+                      <when test="skillLevel == 'EXPERT'">
+                          'EXPERT'
+                      </when>
+                  </choose>
+              )
+          </if>
+        ORDER BY 
+            CASE skill_level
+                WHEN 'EXPERT' THEN 1
+                WHEN 'SENIOR' THEN 2
+                WHEN 'INTERMEDIATE' THEN 3
+                WHEN 'JUNIOR' THEN 4
+                ELSE 5
+            END,
+            efficiency_rating DESC,
+            quality_rating DESC,
+            current_workload ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询工人详细信息（包含统计数据） -->
+    <select id="getWorkerDetail" resultType="java.util.Map">
+        SELECT 
+            w.*,
+            COALESCE(task_stats.total_tasks, 0) as totalTasks,
+            COALESCE(task_stats.completed_tasks, 0) as completedTasks,
+            COALESCE(task_stats.in_progress_tasks, 0) as inProgressTasks,
+            COALESCE(ROUND(task_stats.completed_tasks * 100.0 / NULLIF(task_stats.total_tasks, 0), 2), 0) as completionRate
+        FROM jsh_production_worker w
+        LEFT JOIN (
+            SELECT 
+                assigned_worker_id,
+                COUNT(*) as total_tasks,
+                COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed_tasks,
+                COUNT(CASE WHEN status = 'IN_PROGRESS' THEN 1 END) as in_progress_tasks
+            FROM jsh_production_task
+            WHERE tenant_id = #{tenantId}
+              AND delete_flag = '0'
+            GROUP BY assigned_worker_id
+        ) task_stats ON w.id = task_stats.assigned_worker_id
+        WHERE w.id = #{id}
+          AND w.tenant_id = #{tenantId}
+          AND w.delete_flag = '0'
+    </select>
+
+</mapper>

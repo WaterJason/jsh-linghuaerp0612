@@ -4,7 +4,7 @@ import { FormTypes } from '@/utils/JEditableTableUtil'
 import { findBillDetailByNumber, findBySelectSup, findBySelectCus, findBySelectRetail, getUserList, getAccount,
   waitBillCount, getCurrentSystemConfig, getPlatformConfigByKey, getPersonByNumType } from '@/api/api'
 import { getCheckFlag, getFormatDate, getMpListShort, getPrevMonthFormatDate } from '@/utils/util'
-import moment from 'moment'
+import dayjs from 'dayjs'
 import pick from 'lodash.pick'
 
 export const BillListMixin = {
@@ -410,7 +410,7 @@ export const BillListMixin = {
       queryParam: {
         beginTime: getPrevMonthFormatDate(3),
         endTime: getFormatDate(),
-        createTimeRange: [moment(getPrevMonthFormatDate(3)), moment(getFormatDate())]
+        createTimeRange: [dayjs(getPrevMonthFormatDate(3)), dayjs(getFormatDate())]
       }
     }
   },
@@ -581,7 +581,7 @@ export const BillListMixin = {
         subType: this.queryParam.subType,
         beginTime: getPrevMonthFormatDate(3),
         endTime: getFormatDate(),
-        createTimeRange: [moment(getPrevMonthFormatDate(3)), moment(getFormatDate())]
+        createTimeRange: [dayjs(getPrevMonthFormatDate(3)), dayjs(getFormatDate())]
       }
       this.loadData(1)
     },
@@ -589,7 +589,7 @@ export const BillListMixin = {
       this.queryParam.beginTime=dateString[0]
       this.queryParam.endTime=dateString[1]
       if(dateString[0] && dateString[1]) {
-        this.queryParam.createTimeRange = [moment(dateString[0]), moment(dateString[1])]
+        this.queryParam.createTimeRange = [dayjs(dateString[0]), dayjs(dateString[1])]
       }
     },
     onDateOk(value) {

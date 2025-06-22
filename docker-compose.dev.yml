@@ -98,14 +98,14 @@ services:
     container_name: jsherp-frontend-dev
     restart: unless-stopped
     working_dir: /app
-    command: sh -c "npm config set registry https://registry.npmmirror.com/ && yarn install && yarn serve --host 0.0.0.0 --port 8080"
+    command: sh -c "npm config set registry https://registry.npmmirror.com/ && yarn install && yarn serve --host 0.0.0.0 --port 3000"
     environment:
       NODE_ENV: development
       VUE_APP_API_BASE_URL: http://jsherp-backend-dev:9999/jshERP-boot
       CHOKIDAR_USEPOLLING: true  # 启用文件监听（Docker for Mac/Windows）
       TZ: ${TIMEZONE:-Asia/Shanghai}
     ports:
-      - "${HOST_FRONTEND_PORT:-3000}:8080"
+      - "8080:3000"
     volumes:
       - ./jshERP-web:/app:cached  # 源码挂载，支持热重载
       - /app/node_modules         # 防止覆盖 node_modules

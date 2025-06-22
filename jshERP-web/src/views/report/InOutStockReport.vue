@@ -152,7 +152,7 @@
   import {queryMaterialCategoryTreeList} from '@/api/api'
   import { getFormatDate, getMpListShort, getPrevMonthFormatDate } from '@/utils/util'
   import JEllipsis from '@/components/jeecg/JEllipsis'
-  import moment from 'moment'
+  import dayjs from 'dayjs'
   import Vue from 'vue'
   export default {
     name: "InOutStockReport",
@@ -163,7 +163,7 @@
     data () {
       return {
         // 查询条件
-        currentMonth: moment().format('YYYY-MM'),
+        currentMonth: dayjs().format('YYYY-MM'),
         monthFormat: 'YYYY-MM',
         labelCol: {
           span: 5
@@ -176,7 +176,7 @@
           depotId: undefined,
           beginTime: getPrevMonthFormatDate(1),
           endTime: getFormatDate(),
-          createTimeRange: [moment(getPrevMonthFormatDate(1)), moment(getFormatDate())],
+          createTimeRange: [dayjs(getPrevMonthFormatDate(1)), dayjs(getFormatDate())],
           materialParam:'',
           categoryId: undefined,
           mpList: getMpListShort(Vue.ls.get('materialPropertyList'))  //扩展属性
@@ -237,7 +237,7 @@
       this.handleChangeOtherField(0)
     },
     methods: {
-      moment,
+      dayjs,
       getQueryParams() {
         let param = Object.assign({}, this.queryParam, this.isorter);
         if(this.depotSelected && this.depotSelected.length>0) {
@@ -253,7 +253,7 @@
         this.queryParam.beginTime=dateString[0]
         this.queryParam.endTime=dateString[1]
         if(dateString[0] && dateString[1]) {
-          this.queryParam.createTimeRange = [moment(dateString[0]), moment(dateString[1])]
+          this.queryParam.createTimeRange = [dayjs(dateString[0]), dayjs(dateString[1])]
         }
       },
       getDepotData() {

@@ -85,8 +85,8 @@ public class ProductionServiceImplTest {
         // 设置模拟生产订单
         mockProductionOrder = new ProductionOrder();
         mockProductionOrder.setId(1L);
-        mockProductionOrder.setOrderNo("PO20250621001");
-        mockProductionOrder.setSalesOrderId(1L);
+        mockProductionOrder.setOrderNumber("PO20250621001");
+        mockProductionOrder.setOriginalSaleOrderId(1L);
         mockProductionOrder.setMaterialId(1L);
         mockProductionOrder.setQuantity(new BigDecimal("5"));
         mockProductionOrder.setStatus("PENDING");
@@ -104,7 +104,7 @@ public class ProductionServiceImplTest {
         // Then
         assertNotNull(result);
         assertEquals(mockProductionOrder.getId(), result.getId());
-        assertEquals(mockProductionOrder.getOrderNo(), result.getOrderNo());
+        assertEquals(mockProductionOrder.getOrderNumber(), result.getOrderNumber());
         verify(productionOrderMapper).selectByPrimaryKey(productionOrderId);
     }
 
@@ -233,7 +233,7 @@ public class ProductionServiceImplTest {
     public void testInsertProductionOrder_Success() throws Exception {
         // Given
         JSONObject obj = new JSONObject();
-        obj.put("orderNo", "PO20250621001");
+        obj.put("orderNumber", "PO20250621001");
         obj.put("materialId", 1L);
         obj.put("quantity", new BigDecimal("5"));
         obj.put("status", "PENDING");
@@ -255,7 +255,7 @@ public class ProductionServiceImplTest {
         // Given
         JSONObject obj = new JSONObject();
         obj.put("id", 1L);
-        obj.put("orderNo", "PO20250621001");
+        obj.put("orderNumber", "PO20250621001");
         obj.put("status", "IN_PROGRESS");
 
         when(userService.getCurrentUser()).thenReturn(mockUser);
@@ -313,7 +313,7 @@ public class ProductionServiceImplTest {
         when(productionOrderMapperEx.findMaxOrderNoByPrefix(datePrefix)).thenReturn(null);
 
         // When
-        String orderNo = productionService.generateOrderNo();
+        String orderNo = productionService.generateOrderNumber();
 
         // Then
         assertNotNull(orderNo);
@@ -330,7 +330,7 @@ public class ProductionServiceImplTest {
         when(productionOrderMapperEx.findMaxOrderNoByPrefix(datePrefix)).thenReturn(maxOrderNo);
 
         // When
-        String orderNo = productionService.generateOrderNo();
+        String orderNo = productionService.generateOrderNumber();
 
         // Then
         assertNotNull(orderNo);

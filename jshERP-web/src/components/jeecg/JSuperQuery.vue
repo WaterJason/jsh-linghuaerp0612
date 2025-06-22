@@ -143,7 +143,7 @@
                 <j-area-linkage v-model="item.val" v-else-if="item.type==='area-linkage' || item.type==='pca'" style="width: 100%"/>
                 <j-date v-else-if=" item.type=='date' " v-model="item.val" placeholder="请选择日期" style="width: 100%"></j-date>
                 <j-date v-else-if=" item.type=='datetime' " v-model="item.val" placeholder="请选择时间" :show-time="true" date-format="YYYY-MM-DD HH:mm:ss" style="width: 100%"></j-date>
-                <a-time-picker v-else-if="item.type==='time'" :value="item.val ? moment(item.val,'HH:mm:ss') : null" format="HH:mm:ss" style="width: 100%" @change="(time,value)=>item.val=value"/>
+                <a-time-picker v-else-if="item.type==='time'" :value="item.val ? dayjs(item.val) : null" format="HH:mm:ss" style="width: 100%" @change="(time,value)=>item.val=value"/>
                 <a-input-number v-else-if=" item.type=='int'||item.type=='number' " style="width: 100%" placeholder="请输入数值" v-model="item.val"/>
                 <a-input v-else v-model="item.val" placeholder="请输入值"/>
               </a-col>
@@ -198,7 +198,7 @@
 </template>
 
 <script>
-  import moment from 'moment'
+  import dayjs from 'dayjs'
   import * as utils from '@/utils/util'
   import { mixinDevice } from '@/utils/mixin'
   import JDate from '@/components/jeecg/JDate.vue'
@@ -249,7 +249,7 @@
     },
     data() {
       return {
-        moment,
+        dayjs,
         fieldTreeData: [],
 
         prompt: {

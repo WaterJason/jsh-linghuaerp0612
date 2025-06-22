@@ -2,7 +2,7 @@ import { findFinancialDetailByNumber, findBySelectSup, findBySelectCus, findBySe
   getAccount, getCurrentSystemConfig, getPlatformConfigByKey, findInOutItemByParam, getNeedCount } from '@/api/api'
 import { getCheckFlag, getFormatDate, getPrevMonthFormatDate } from '@/utils/util'
 import Vue from 'vue'
-import moment from 'moment'
+import dayjs from 'dayjs'
 
 export const FinancialListMixin = {
   data () {
@@ -25,7 +25,7 @@ export const FinancialListMixin = {
       queryParam: {
         beginTime: getPrevMonthFormatDate(3),
         endTime: getFormatDate(),
-        createTimeRange: [moment(getPrevMonthFormatDate(3)), moment(getFormatDate())]
+        createTimeRange: [dayjs(getPrevMonthFormatDate(3)), dayjs(getFormatDate())]
       }
     }
   },
@@ -103,7 +103,7 @@ export const FinancialListMixin = {
         type: this.queryParam.type,
         beginTime: getPrevMonthFormatDate(3),
         endTime: getFormatDate(),
-        createTimeRange: [moment(getPrevMonthFormatDate(3)), moment(getFormatDate())]
+        createTimeRange: [dayjs(getPrevMonthFormatDate(3)), dayjs(getFormatDate())]
       }
       this.loadData(1);
     },
@@ -195,7 +195,7 @@ export const FinancialListMixin = {
       this.queryParam.beginTime=dateString[0]
       this.queryParam.endTime=dateString[1]
       if(dateString[0] && dateString[1]) {
-        this.queryParam.createTimeRange = [moment(dateString[0]), moment(dateString[1])]
+        this.queryParam.createTimeRange = [dayjs(dateString[0]), dayjs(dateString[1])]
       }
     },
     onDateOk(value) {

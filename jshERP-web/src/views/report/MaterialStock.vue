@@ -159,7 +159,7 @@
   import {queryMaterialCategoryTreeList} from '@/api/api'
   import { getMpListShort } from "@/utils/util"
   import JEllipsis from '@/components/jeecg/JEllipsis'
-  import moment from 'moment'
+  import dayjs from 'dayjs'
   import Vue from 'vue'
   export default {
     name: "MaterialStock",
@@ -240,7 +240,7 @@
       this.initColumnsSetting()
     },
     methods: {
-      moment,
+      dayjs,
       getQueryParams() {
         let param = Object.assign({}, this.queryParam, this.isorter);
         if(this.depotSelected && this.depotSelected.length>0) {

@@ -494,7 +494,7 @@ public class MaterialService {
             otherField = mpList;
         }
         String nameStr = "名称*,规格,型号,颜色,品牌,类别,基础重量(kg),保质期(天),基本单位*,副单位,基本条码*,副条码,比例,多属性," +
-                "采购价,零售价,销售价,最低售价,状态*,序列号,批号,仓位货架,制造商," + otherField + ",备注";
+                "采购价,零售价,销售价,最低售价,状态*,序列号,批号,仓位货架,制造商," + otherField + ",备注,图片地址";
         List<String> nameList = StringUtil.strToStringList(nameStr);
         //仓库列表
         List<Depot> depotList = depotService.getAllList();
@@ -544,8 +544,9 @@ public class MaterialService {
                 objs[24] = m.getOtherField2();
                 objs[25] = m.getOtherField3();
                 objs[26] = m.getRemark();
+                objs[27] = generateImageUrl(m.getImgName()); // 图片地址
                 //仓库期初库存
-                int i = 27;
+                int i = 28;
                 for(Depot depot: depotList) {
                     BigDecimal number = misMap.get(m.getId() + "_" + depot.getId());
                     objs[i] = number == null ? BigDecimal.ZERO : number.setScale(2, BigDecimal.ROUND_HALF_UP);
@@ -667,12 +668,16 @@ public class MaterialService {
                 String otherField2 = ExcelUtils.getContent(src, i, 24); //自定义2
                 String otherField3 = ExcelUtils.getContent(src, i, 25); //自定义3
                 String remark = ExcelUtils.getContent(src, i, 26); //备注
+                String imageUrl = ExcelUtils.getContent(src, i, 27); //图片地址
                 m.setPosition(StringUtil.isNotEmpty(position)?position:null);
                 m.setMfrs(StringUtil.isNotEmpty(mfrs)?mfrs:null);
                 m.setOtherField1(StringUtil.isNotEmpty(otherField1)?otherField1:null);
                 m.setOtherField2(StringUtil.isNotEmpty(otherField2)?otherField2:null);
                 m.setOtherField3(StringUtil.isNotEmpty(otherField3)?otherField3:null);
                 m.setRemark(remark);
+                // 处理图片地址，将URL转换为相对路径
+                String imgName = extractImagePath(imageUrl);
+                m.setImgName(imgName);
                 //状态格式错误
                 if(!"1".equals(enabled) && !"0".equals(enabled)) {
                     throw new BusinessRunTimeException(ExceptionConstants.MATERIAL_ENABLED_ERROR_CODE,
@@ -908,7 +913,7 @@ public class MaterialService {
     private Map<Long, BigDecimal> getStockMapCache(Sheet src, int depotCount, Map<String, Long> depotMap, int i) throws Exception {
         Map<Long, BigDecimal> stockMap = new HashMap<>();
         for(int j = 1; j<= depotCount; j++) {
-            int col = 26 + j;
+            int col = 27 + j; // 因为增加了图片地址列，所以仓库列从28开始
             if(col < src.getColumns()){
                 String depotName = ExcelUtils.getContent(src, 1, col); //获取仓库名称
                 if(StringUtil.isNotEmpty(depotName)) {
@@ -1485,6 +1490,84 @@ public class MaterialService {
             attributeObj.put("skuThree", skuThree);
             return attributeObj.toJSONString();
         } else {
+            return null;
+        }
+    }
+
+    /**
+     * 生成图片访问URL
+     * @param imgName 图片名称（相对路径）
+     * @return 完整的图片访问URL，多个图片用逗号分隔
+     */
+    private String generateImageUrl(String imgName) {
+        if (StringUtil.isEmpty(imgName)) {
+            return "";
+        }
+
+        try {
+            String[] imgPaths = imgName.split(",");
+            StringBuilder urlBuilder = new StringBuilder();
+
+            for (int i = 0; i < imgPaths.length; i++) {
+                String path = imgPaths[i].trim();
+                if (StringUtil.isNotEmpty(path)) {
+                    // 生成完整的访问URL，使用相对路径格式
+                    String fullUrl = "/systemConfig/static/" + path;
+                    urlBuilder.append(fullUrl);
+
+                    if (i < imgPaths.length - 1) {
+                        urlBuilder.append(",");
+                    }
+                }
+            }
+
+            return urlBuilder.toString();
+        } catch (Exception e) {
+            logger.error("生成图片URL失败: " + imgName, e);
+            return "";
+        }
+    }
+
+    /**
+     * 从图片URL提取相对路径
+     * @param imageUrl 完整的图片URL
+     * @return 相对路径，多个路径用逗号分隔
+     */
+    private String extractImagePath(String imageUrl) {
+        if (StringUtil.isEmpty(imageUrl)) {
+            return null;
+        }
+
+        try {
+            String[] urls = imageUrl.split(",");
+            StringBuilder pathBuilder = new StringBuilder();
+
+            for (int i = 0; i < urls.length; i++) {
+                String url = urls[i].trim();
+                if (StringUtil.isNotEmpty(url)) {
+                    // 提取相对路径部分
+                    String relativePath = "";
+                    if (url.contains("/systemConfig/static/")) {
+                        relativePath = url.substring(url.indexOf("/systemConfig/static/") + "/systemConfig/static/".length());
+                    } else if (url.contains("material/")) {
+                        // 直接包含material路径的情况
+                        relativePath = url.substring(url.indexOf("material/"));
+                    } else {
+                        // 如果URL格式不符合预期，记录警告但不抛出异常
+                        logger.warn("图片URL格式不符合预期: " + url);
+                        continue;
+                    }
+
+                    pathBuilder.append(relativePath);
+                    if (i < urls.length - 1) {
+                        pathBuilder.append(",");
+                    }
+                }
+            }
+
+            return pathBuilder.length() > 0 ? pathBuilder.toString() : null;
+        } catch (Exception e) {
+            logger.error("提取图片路径失败: " + imageUrl, e);
             return null;
         }
     }
