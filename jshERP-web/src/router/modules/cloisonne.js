@@ -5,7 +5,7 @@
  * @since 2025-01-22
  */
 
-import { BasicLayout } from '@/layouts'
+import { BasicLayout } from '@/components/layouts'
 
 const CloisonneRouter = {
   path: '/cloisonne',

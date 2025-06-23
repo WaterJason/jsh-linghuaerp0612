@@ -80,6 +80,6 @@ export const constantRouterMap = [
     path: '/post-processing-tasks',
     component: () => import(/* webpackChunkName: "production" */ '@/views/production/PostProcessingTaskList'),
     meta: { title: '后工任务列表' }
-  },
+  }
 
 ]
