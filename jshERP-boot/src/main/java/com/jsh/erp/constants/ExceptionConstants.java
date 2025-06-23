@@ -498,6 +498,14 @@ public class ExceptionConstants {
     public static final int ACCOUNT_HEAD_EDIT_FAILED_CODE = 9500002;
     public static final String ACCOUNT_HEAD_EDIT_FAILED_MSG = "修改财务信息失败";
     //单据录入-明细不能为空
+
+    /**
+     * 掐丝珐琅馆值班管理
+     * type = 100
+     * */
+    //值班时间冲突
+    public static final int CLOISONNE_DUTY_CONFLICT_CODE = 10000000;
+    public static final String CLOISONNE_DUTY_CONFLICT_MSG = "值班时间冲突";
     public static final int ACCOUNT_HEAD_ROW_FAILED_CODE = 9500003;
     public static final String ACCOUNT_HEAD_ROW_FAILED_MSG = "单据明细不能为空";
     //单据删除-只有未审核的单据才能删除，请先进行反审核

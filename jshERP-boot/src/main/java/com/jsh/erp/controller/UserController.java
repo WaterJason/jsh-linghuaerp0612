@@ -283,22 +283,33 @@ public class UserController extends BaseController {
      */
     @GetMapping(value = "/getUserList")
     @ApiOperation(value = "用户列表")
-    public JSONArray getUserList(HttpServletRequest request)throws Exception {
-        JSONArray dataArray = new JSONArray();
+    public JSONObject getUserList(HttpServletRequest request)throws Exception {
+        JSONObject result = new JSONObject();
         try {
             List<User> dataList = userService.getUser(request);
+            JSONArray dataArray = new JSONArray();
             if (null != dataList) {
                 for (User user : dataList) {
                     JSONObject item = new JSONObject();
                     item.put("id", user.getId());
                     item.put("userName", user.getUsername());
+                    item.put("realName", user.getUsername()); // 使用username作为realName，如果有真实姓名字段可以替换
+                    item.put("phone", user.getPhonenum());
+                    item.put("email", user.getEmail());
+                    item.put("position", user.getPosition());
                     dataArray.add(item);
                 }
             }
+            result.put("success", true);
+            result.put("result", dataArray);
+            result.put("message", "获取用户列表成功");
         } catch(Exception e){
             logger.error(e.getMessage(), e);
+            result.put("success", false);
+            result.put("result", new JSONArray());
+            result.put("message", "获取用户列表失败：" + e.getMessage());
         }
-        return dataArray;
+        return result;
     }
 
     /**

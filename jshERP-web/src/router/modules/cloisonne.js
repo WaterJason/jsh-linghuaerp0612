@@ -5,12 +5,12 @@
  * @since 2025-01-22
  */
 
-import { BasicLayout } from '@/components/layouts'
+import { TabLayout } from '@/components/layouts'
 
 const CloisonneRouter = {
   path: '/cloisonne',
   name: 'cloisonne',
-  component: BasicLayout,
+  component: TabLayout,
   redirect: '/cloisonne/dashboard',
   meta: {
     title: '掐丝珐琅馆',
@@ -25,18 +25,18 @@ const CloisonneRouter = {
       meta: {
         title: '总览仪表板',
         icon: 'dashboard',
-        permission: ['1001'],
+        permission: ['301'],
         keepAlive: true
       }
     },
     {
       path: '/cloisonne/schedule',
-      name: 'CloisonneSchedule',
-      component: () => import('@/views/cloisonne/Schedule'),
+      name: 'CloisonneDutyList',
+      component: () => import('@/views/cloisonne/CloisonneScheduleList'),
       meta: {
-        title: '排班管理',
+        title: '珐琅馆排班',
         icon: 'calendar',
-        permission: ['1002'],
+        permission: ['307'],
         keepAlive: true
       }
     },
@@ -47,7 +47,7 @@ const CloisonneRouter = {
       meta: {
         title: '咖啡店管理',
         icon: 'coffee',
-        permission: ['1003'],
+        permission: ['302'],
         keepAlive: true
       }
     },
@@ -58,7 +58,7 @@ const CloisonneRouter = {
       meta: {
         title: 'POS销售',
         icon: 'shopping-cart',
-        permission: ['1004'],
+        permission: ['303'],
         keepAlive: true
       }
     },
@@ -69,7 +69,7 @@ const CloisonneRouter = {
       meta: {
         title: '任务管理',
         icon: 'check-square',
-        permission: ['1005'],
+        permission: ['304'],
         keepAlive: true
       }
     },
@@ -80,7 +80,7 @@ const CloisonneRouter = {
       meta: {
         title: '模块配置',
         icon: 'setting',
-        permission: ['1006'],
+        permission: ['305'],
         keepAlive: false
       }
     }

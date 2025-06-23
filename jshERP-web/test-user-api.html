@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试用户API</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>测试用户API</h1>
+    <button onclick="testUserList()">测试获取用户列表</button>
+    <div id="result"></div>
+
+    <script>
+        // 设置axios默认配置
+        axios.defaults.baseURL = 'http://localhost:9999';
+        axios.defaults.headers.common['Content-Type'] = 'application/json';
+        
+        // 如果有token，设置认证头
+        const token = localStorage.getItem('X-Access-Token');
+        if (token) {
+            axios.defaults.headers.common['X-Access-Token'] = token;
+        }
+
+        async function testUserList() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '正在请求...';
+            
+            try {
+                const response = await axios.get('/user/getUserList');
+                console.log('API响应:', response.data);
+                
+                resultDiv.innerHTML = `
+                    <h3>API响应成功:</h3>
+                    <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('API请求失败:', error);
+                
+                resultDiv.innerHTML = `
+                    <h3>API请求失败:</h3>
+                    <p>状态码: ${error.response?.status}</p>
+                    <p>错误信息: ${error.message}</p>
+                    <pre>${JSON.stringify(error.response?.data, null, 2)}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

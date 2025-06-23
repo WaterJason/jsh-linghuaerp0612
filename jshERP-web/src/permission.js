@@ -3,7 +3,7 @@ import router from './router'
 import store from './store'
 import NProgress from 'nprogress' // progress bar
 import 'nprogress/nprogress.css' // progress bar style
-import { USER_ID,INDEX_MAIN_PAGE_PATH } from '@/store/mutation-types'
+import { USER_ID,INDEX_MAIN_PAGE_PATH,USER_AUTH } from '@/store/mutation-types'
 import { generateIndexRouter } from "@/utils/util"
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
@@ -27,6 +27,10 @@ router.beforeEach((to, from, next) => {
           // 缓存用户的按钮权限
           store.dispatch('GetUserBtnList').then(res => {
             Vue.ls.set('winBtnStrList', res.data.userBtn, 7 * 24 * 60 * 60 * 1000)
+            // 同时设置到sessionStorage中供按钮权限验证使用
+            if(res.data.userBtn) {
+              sessionStorage.setItem(USER_AUTH, JSON.stringify(res.data.userBtn))
+            }
           })
           let constRoutes = [];
           constRoutes = generateIndexRouter(menuData);
