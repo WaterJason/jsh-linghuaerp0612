@@ -83,7 +83,7 @@
         </a-form-item>
         
         <a-form-item>
-          <a-space>
+          <div style="display: flex; gap: 8px;">
             <a-button type="primary" html-type="submit" :loading="loading">
               <a-icon type="search" />
               查询
@@ -92,7 +92,7 @@
               <a-icon type="reload" />
               重置
             </a-button>
-          </a-space>
+          </div>
         </a-form-item>
       </a-form>
     </a-card>
@@ -148,6 +148,7 @@
 
 <script>
 import dayjs from 'dayjs'
+import moment from 'moment'
 import { mapGetters } from 'vuex'
 import ScheduleCalendarView from './components/ScheduleCalendarView.vue'
 import ScheduleListView from './components/ScheduleListView.vue'
@@ -178,7 +179,7 @@ export default {
       
       // 搜索表单
       searchForm: {
-        dateRange: [dayjs().startOf('month'), dayjs().endOf('month')],
+        dateRange: [moment().startOf('month'), moment().endOf('month')],
         employeeId: null,
         shiftType: null,
         status: null
@@ -198,28 +199,28 @@ export default {
       
       // 日期范围预设
       dateRangePresets: {
-        '本周': [dayjs().startOf('week'), dayjs().endOf('week')],
-        '本月': [dayjs().startOf('month'), dayjs().endOf('month')],
-        '下月': [dayjs().add(1, 'month').startOf('month'), dayjs().add(1, 'month').endOf('month')],
-        '最近30天': [dayjs().subtract(30, 'days'), dayjs()],
-        '最近90天': [dayjs().subtract(90, 'days'), dayjs()]
+        '本周': [moment().startOf('week'), moment().endOf('week')],
+        '本月': [moment().startOf('month'), moment().endOf('month')],
+        '下月': [moment().add(1, 'month').startOf('month'), moment().add(1, 'month').endOf('month')],
+        '最近30天': [moment().subtract(30, 'days'), moment()],
+        '最近90天': [moment().subtract(90, 'days'), moment()]
       }
     }
   },
   
   computed: {
-    ...mapGetters(['userInfo', 'permissions']),
-    
+    ...mapGetters(['userInfo', 'permissionList']),
+
     hasAddPermission() {
-      return this.permissions.includes('1002:1')
+      return this.permissionList && this.permissionList.some(item => item.url === '/cloisonne/schedule' && item.btnStr && item.btnStr.includes('1'))
     },
-    
+
     hasEditPermission() {
-      return this.permissions.includes('1002:2')
+      return this.permissionList && this.permissionList.some(item => item.url === '/cloisonne/schedule' && item.btnStr && item.btnStr.includes('2'))
     },
-    
+
     hasDeletePermission() {
-      return this.permissions.includes('1002:3')
+      return this.permissionList && this.permissionList.some(item => item.url === '/cloisonne/schedule' && item.btnStr && item.btnStr.includes('3'))
     }
   },
   
@@ -310,7 +311,7 @@ export default {
     // 重置搜索
     handleReset() {
       this.searchForm = {
-        dateRange: [dayjs().startOf('month'), dayjs().endOf('month')],
+        dateRange: [moment().startOf('month'), moment().endOf('month')],
         employeeId: null,
         shiftType: null,
         status: null

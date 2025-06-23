@@ -235,7 +235,7 @@ export default {
       
       let current = startOfCalendar.clone()
       
-      while (current.isSameOrBefore(endOfCalendar)) {
+      while (current.isSame(endOfCalendar) || current.isBefore(endOfCalendar)) {
         const dayData = {
           date: current.format('YYYY-MM-DD'),
           dayNumber: current.date(),
