@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jsh.erp.datasource.mappers.AccessoryProductionMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.jsh.erp.datasource.entities.AccessoryProduction">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="order_number" property="orderNumber" jdbcType="VARCHAR"/>
+        <result column="semi_product_id" property="semiProductId" jdbcType="BIGINT"/>
+        <result column="semi_product_name" property="semiProductName" jdbcType="VARCHAR"/>
+        <result column="accessory_material_id" property="accessoryMaterialId" jdbcType="BIGINT"/>
+        <result column="accessory_material_name" property="accessoryMaterialName" jdbcType="VARCHAR"/>
+        <result column="quantity" property="quantity" jdbcType="DECIMAL"/>
+        <result column="unit_id" property="unitId" jdbcType="BIGINT"/>
+        <result column="unit_name" property="unitName" jdbcType="VARCHAR"/>
+        <result column="labor_cost_amount" property="laborCostAmount" jdbcType="DECIMAL"/>
+        <result column="worker_id" property="workerId" jdbcType="BIGINT"/>
+        <result column="worker_name" property="workerName" jdbcType="VARCHAR"/>
+        <result column="salary_amount" property="salaryAmount" jdbcType="DECIMAL"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="start_time" property="startTime" jdbcType="TIMESTAMP"/>
+        <result column="end_time" property="endTime" jdbcType="TIMESTAMP"/>
+        <result column="accessory_type" property="accessoryType" jdbcType="VARCHAR"/>
+        <result column="accessory_style" property="accessoryStyle" jdbcType="VARCHAR"/>
+        <result column="assembly_method" property="assemblyMethod" jdbcType="VARCHAR"/>
+        <result column="finishing_process" property="finishingProcess" jdbcType="VARCHAR"/>
+        <result column="difficulty_level" property="difficultyLevel" jdbcType="VARCHAR"/>
+        <result column="quality_grade" property="qualityGrade" jdbcType="VARCHAR"/>
+        <result column="quality_score" property="qualityScore" jdbcType="DECIMAL"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="tenant_id" property="tenantId" jdbcType="BIGINT"/>
+        <result column="delete_flag" property="deleteFlag" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user" property="createUser" jdbcType="BIGINT"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="update_user" property="updateUser" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, order_number, semi_product_id, semi_product_name, accessory_material_id, accessory_material_name,
+        quantity, unit_id, unit_name, labor_cost_amount, worker_id, worker_name, salary_amount,
+        status, start_time, end_time, accessory_type, accessory_style, assembly_method, finishing_process,
+        difficulty_level, quality_grade, quality_score, remark, tenant_id, delete_flag,
+        create_time, create_user, update_time, update_user
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            delete_flag = '0'
+            <if test="parameterMap.tenantId != null">
+                AND tenant_id = #{parameterMap.tenantId}
+            </if>
+            <if test="parameterMap.orderNumber != null and parameterMap.orderNumber != ''">
+                AND order_number LIKE CONCAT('%', #{parameterMap.orderNumber}, '%')
+            </if>
+            <if test="parameterMap.semiProductName != null and parameterMap.semiProductName != ''">
+                AND semi_product_name LIKE CONCAT('%', #{parameterMap.semiProductName}, '%')
+            </if>
+            <if test="parameterMap.accessoryMaterialName != null and parameterMap.accessoryMaterialName != ''">
+                AND accessory_material_name LIKE CONCAT('%', #{parameterMap.accessoryMaterialName}, '%')
+            </if>
+            <if test="parameterMap.status != null and parameterMap.status != ''">
+                AND status = #{parameterMap.status}
+            </if>
+            <if test="parameterMap.workerId != null">
+                AND worker_id = #{parameterMap.workerId}
+            </if>
+            <if test="parameterMap.workerName != null and parameterMap.workerName != ''">
+                AND worker_name LIKE CONCAT('%', #{parameterMap.workerName}, '%')
+            </if>
+            <if test="parameterMap.accessoryType != null and parameterMap.accessoryType != ''">
+                AND accessory_type = #{parameterMap.accessoryType}
+            </if>
+            <if test="parameterMap.difficultyLevel != null and parameterMap.difficultyLevel != ''">
+                AND difficulty_level = #{parameterMap.difficultyLevel}
+            </if>
+            <if test="parameterMap.startTimeFrom != null">
+                AND start_time >= #{parameterMap.startTimeFrom}
+            </if>
+            <if test="parameterMap.startTimeTo != null">
+                AND start_time &lt;= #{parameterMap.startTimeTo}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据条件查询配饰制作列表 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_accessory_production
+        <include refid="Where_Clause"/>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据条件统计配饰制作数量 -->
+    <select id="countByCondition" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM jsh_accessory_production
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 根据订单号查询配饰制作信息 -->
+    <select id="selectByOrderNumber" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_accessory_production
+        WHERE order_number = #{orderNumber}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+    </select>
+
+    <!-- 根据状态查询配饰制作列表 -->
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_accessory_production
+        WHERE status = #{status}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据工人查询配饰制作列表 -->
+    <select id="selectByWorkerId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_accessory_production
+        WHERE worker_id = #{workerId}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据半成品查询配饰制作列表 -->
+    <select id="selectBySemiProductId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_accessory_production
+        WHERE semi_product_id = #{semiProductId}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 更新制作状态 -->
+    <update id="updateStatus">
+        UPDATE jsh_accessory_production
+        SET status = #{status},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新制作开始时间 -->
+    <update id="updateStartTime">
+        UPDATE jsh_accessory_production
+        SET start_time = #{startTime},
+            status = 'IN_PROGRESS',
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新制作完成时间 -->
+    <update id="updateEndTime">
+        UPDATE jsh_accessory_production
+        SET end_time = #{endTime},
+            status = 'COMPLETED',
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新质量信息 -->
+    <update id="updateQualityInfo">
+        UPDATE jsh_accessory_production
+        SET quality_grade = #{qualityGrade},
+            quality_score = #{qualityScore},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 分配工人 -->
+    <update id="assignWorker">
+        UPDATE jsh_accessory_production
+        SET worker_id = #{workerId},
+            worker_name = #{workerName},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 批量更新状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE jsh_accessory_production
+        SET status = #{status},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND delete_flag = '0'
+    </update>
+
+    <!-- 批量删除制作记录（软删除） -->
+    <update id="batchDelete">
+        UPDATE jsh_accessory_production
+        SET delete_flag = '1',
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND delete_flag = '0'
+    </update>
+
+    <!-- 获取制作统计信息 -->
+    <select id="getProductionStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as totalOrders,
+            COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pendingOrders,
+            COUNT(CASE WHEN status = 'IN_PROGRESS' THEN 1 END) as inProgressOrders,
+            COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completedOrders,
+            COUNT(CASE WHEN status = 'CANCELLED' THEN 1 END) as cancelledOrders,
+            SUM(quantity) as totalQuantity,
+            SUM(CASE WHEN status = 'COMPLETED' THEN quantity ELSE 0 END) as completedQuantity,
+            SUM(labor_cost_amount) as totalAmount,
+            SUM(salary_amount) as totalSalary,
+            AVG(labor_cost_amount / quantity) as avgUnitPrice,
+            AVG(CASE 
+                WHEN status = 'COMPLETED' AND start_time IS NOT NULL AND end_time IS NOT NULL 
+                THEN DATEDIFF(end_time, start_time) 
+                ELSE NULL 
+            END) as avgCycleTime,
+            AVG(CASE WHEN quality_score IS NOT NULL THEN quality_score ELSE NULL END) as avgQualityScore
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+    </select>
+
+    <!-- 根据状态统计制作数量 -->
+    <select id="getStatusStatistics" resultType="java.util.Map">
+        SELECT 
+            status,
+            COUNT(*) as count,
+            SUM(quantity) as totalQuantity,
+            SUM(labor_cost_amount) as totalAmount
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        GROUP BY status
+        ORDER BY count DESC
+    </select>
+
+    <!-- 根据工人统计制作数量 -->
+    <select id="getWorkerStatistics" resultType="java.util.Map">
+        SELECT 
+            worker_id as workerId,
+            worker_name as workerName,
+            COUNT(*) as count,
+            SUM(quantity) as totalQuantity,
+            SUM(salary_amount) as totalSalary,
+            AVG(quality_score) as avgQualityScore
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND worker_id IS NOT NULL
+        GROUP BY worker_id, worker_name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 根据配饰类型统计制作数量 -->
+    <select id="getAccessoryTypeStatistics" resultType="java.util.Map">
+        SELECT 
+            accessory_type as accessoryType,
+            COUNT(*) as count,
+            SUM(quantity) as totalQuantity,
+            AVG(quality_score) as avgQualityScore
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND accessory_type IS NOT NULL
+        GROUP BY accessory_type
+        ORDER BY count DESC
+    </select>
+
+    <!-- 根据质量等级统计制作数量 -->
+    <select id="getQualityGradeStatistics" resultType="java.util.Map">
+        SELECT 
+            quality_grade as qualityGrade,
+            COUNT(*) as count,
+            AVG(quality_score) as avgQualityScore
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND quality_grade IS NOT NULL
+        GROUP BY quality_grade
+        ORDER BY 
+            CASE quality_grade
+                WHEN '优秀' THEN 1
+                WHEN '良好' THEN 2
+                WHEN '合格' THEN 3
+                WHEN '不合格' THEN 4
+                ELSE 5
+            END
+    </select>
+
+    <!-- 查询制作周期排行 -->
+    <select id="getCycleTimeRanking" resultType="java.util.Map">
+        SELECT 
+            id,
+            order_number as orderNumber,
+            semi_product_name as semiProductName,
+            worker_name as workerName,
+            start_time as startTime,
+            end_time as endTime,
+            DATEDIFF(end_time, start_time) as cycleTime
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'COMPLETED'
+          AND start_time IS NOT NULL
+          AND end_time IS NOT NULL
+        ORDER BY cycleTime DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询工人效率排行 -->
+    <select id="getWorkerEfficiencyRanking" resultType="java.util.Map">
+        SELECT 
+            worker_id as workerId,
+            worker_name as workerName,
+            COUNT(*) as completedCount,
+            AVG(DATEDIFF(end_time, start_time)) as avgCycleTime,
+            AVG(quality_score) as avgQualityScore,
+            SUM(quantity) as totalQuantity
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'COMPLETED'
+          AND worker_id IS NOT NULL
+          AND start_time IS NOT NULL
+          AND end_time IS NOT NULL
+        GROUP BY worker_id, worker_name
+        ORDER BY avgCycleTime ASC, avgQualityScore DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询质量排行 -->
+    <select id="getQualityRanking" resultType="java.util.Map">
+        SELECT 
+            id,
+            order_number as orderNumber,
+            semi_product_name as semiProductName,
+            worker_name as workerName,
+            quality_grade as qualityGrade,
+            quality_score as qualityScore
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND quality_score IS NOT NULL
+        ORDER BY quality_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询月度制作趋势 -->
+    <select id="getMonthlyTrend" resultType="java.util.Map">
+        SELECT 
+            DATE_FORMAT(create_time, '%Y-%m') as month,
+            COUNT(*) as count,
+            SUM(quantity) as totalQuantity,
+            SUM(labor_cost_amount) as totalAmount,
+            COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completedCount
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND create_time >= DATE_SUB(NOW(), INTERVAL #{months} MONTH)
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m')
+        ORDER BY month DESC
+    </select>
+
+    <!-- 查询制作详细信息（包含关联数据） -->
+    <select id="getProductionDetail" resultType="java.util.Map">
+        SELECT 
+            ap.*,
+            w.specialty as workerSpecialty,
+            w.skill_level as workerSkillLevel,
+            w.efficiency_rating as workerEfficiencyRating
+        FROM jsh_accessory_production ap
+        LEFT JOIN jsh_production_worker w ON ap.worker_id = w.id AND w.delete_flag = '0'
+        WHERE ap.id = #{id}
+          AND ap.tenant_id = #{tenantId}
+          AND ap.delete_flag = '0'
+    </select>
+
+    <!-- 查询待分配的制作订单 -->
+    <select id="getPendingAssignmentOrders" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'PENDING'
+          AND worker_id IS NULL
+        ORDER BY create_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询进行中的制作订单 -->
+    <select id="getInProgressOrders" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'IN_PROGRESS'
+        ORDER BY start_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询工人当前工作负荷 -->
+    <select id="getWorkerWorkload" resultType="java.util.Map">
+        SELECT 
+            worker_id as workerId,
+            worker_name as workerName,
+            COUNT(*) as currentTasks,
+            SUM(quantity) as totalQuantity
+        FROM jsh_accessory_production
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status IN ('PENDING', 'IN_PROGRESS')
+          AND worker_id IS NOT NULL
+        GROUP BY worker_id, worker_name
+        ORDER BY currentTasks DESC
+    </select>
+
+    <!-- 推荐合适的工人 -->
+    <select id="recommendWorkers" resultType="java.util.Map">
+        SELECT 
+            w.id as workerId,
+            w.worker_name as workerName,
+            w.specialty,
+            w.skill_level as skillLevel,
+            w.efficiency_rating as efficiencyRating,
+            w.quality_rating as qualityRating,
+            w.current_workload as currentWorkload,
+            w.max_workload as maxWorkload,
+            COALESCE(ap_stats.completed_count, 0) as completedCount,
+            COALESCE(ap_stats.avg_quality_score, 0) as avgQualityScore
+        FROM jsh_production_worker w
+        LEFT JOIN (
+            SELECT 
+                worker_id,
+                COUNT(*) as completed_count,
+                AVG(quality_score) as avg_quality_score
+            FROM jsh_accessory_production
+            WHERE tenant_id = #{tenantId}
+              AND delete_flag = '0'
+              AND status = 'COMPLETED'
+              AND accessory_type = #{accessoryType}
+            GROUP BY worker_id
+        ) ap_stats ON w.id = ap_stats.worker_id
+        WHERE w.tenant_id = #{tenantId}
+          AND w.delete_flag = '0'
+          AND w.status = 'ACTIVE'
+          AND w.availability_status = 'AVAILABLE'
+          AND w.current_workload &lt; w.max_workload
+          AND w.specialty LIKE CONCAT('%', '配饰制作', '%')
+          <if test="difficultyLevel != null and difficultyLevel != ''">
+              AND w.skill_level IN (
+                  <choose>
+                      <when test="difficultyLevel == 'EASY'">
+                          'JUNIOR', 'INTERMEDIATE', 'SENIOR', 'EXPERT'
+                      </when>
+                      <when test="difficultyLevel == 'MEDIUM'">
+                          'INTERMEDIATE', 'SENIOR', 'EXPERT'
+                      </when>
+                      <when test="difficultyLevel == 'HARD'">
+                          'SENIOR', 'EXPERT'
+                      </when>
+                      <when test="difficultyLevel == 'EXPERT'">
+                          'EXPERT'
+                      </when>
+                  </choose>
+              )
+          </if>
+        ORDER BY 
+            CASE w.skill_level
+                WHEN 'EXPERT' THEN 1
+                WHEN 'SENIOR' THEN 2
+                WHEN 'INTERMEDIATE' THEN 3
+                WHEN 'JUNIOR' THEN 4
+                ELSE 5
+            END,
+            w.efficiency_rating DESC,
+            w.quality_rating DESC,
+            ap_stats.avg_quality_score DESC,
+            w.current_workload ASC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

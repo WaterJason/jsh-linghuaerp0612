@@ -97,7 +97,7 @@
   import JEllipsis from '@/components/jeecg/JEllipsis'
   import { getFormatDate, getPrevMonthFormatDate } from '@/utils/util'
   import {getAction } from '@/api/manage'
-  import moment from 'moment'
+  import dayjs from 'dayjs'
 
   export default {
     name: "LogList",
@@ -117,7 +117,7 @@
           tenantType:'',
           beginTime: getPrevMonthFormatDate(1),
           endTime: getFormatDate(),
-          createTimeRange: [moment(getPrevMonthFormatDate(1)), moment(getFormatDate())],
+          createTimeRange: [dayjs(getPrevMonthFormatDate(1)), dayjs(getFormatDate())],
         },
         tabKey: "1",
         isManage: false,
@@ -166,7 +166,7 @@
         this.queryParam.beginTime=dateString[0]
         this.queryParam.endTime=dateString[1]
         if(dateString[0] && dateString[1]) {
-          this.queryParam.createTimeRange = [moment(dateString[0]), moment(dateString[1])]
+          this.queryParam.createTimeRange = [dayjs(dateString[0]), dayjs(dateString[1])]
         }
       },
       onDateOk(value) {
@@ -182,7 +182,7 @@
           tenantType:'',
           beginTime: getPrevMonthFormatDate(1),
           endTime: getFormatDate(),
-          createTimeRange: [moment(getPrevMonthFormatDate(1)), moment(getFormatDate())],
+          createTimeRange: [dayjs(getPrevMonthFormatDate(1)), dayjs(getFormatDate())],
         }
         this.loadData(1);
       },

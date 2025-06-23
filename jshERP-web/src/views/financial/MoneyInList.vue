@@ -158,7 +158,7 @@
   import { FinancialListMixin } from './mixins/FinancialListMixin'
   import JDate from '@/components/jeecg/JDate'
   import { getFormatDate, getPrevMonthFormatDate } from '@/utils/util'
-  import moment from 'moment'
+  import dayjs from 'dayjs'
   import { getAction } from '@/api/manage'
   export default {
     name: "MoneyInList",

@@ -278,6 +278,9 @@ public class ExceptionConstants {
     //商品的序列号不能为空
     public static final int MATERIAL_SERIAL_NUMBERE_EMPTY_CODE = 8000003;
     public static final String MATERIAL_SERIAL_NUMBERE_EMPTY_MSG = "抱歉，商品条码:%s的序列号不能为空";
+    //商品序列号已存在
+    public static final int MATERIAL_SERIAL_NUMBERE_ALREADY_EXISTS_CODE = 8000030;
+    public static final String MATERIAL_SERIAL_NUMBERE_ALREADY_EXISTS_MSG = "商品序列号已存在";
     //商品库存不足
     public static final int MATERIAL_STOCK_NOT_ENOUGH_CODE = 8000004;
     public static final String MATERIAL_STOCK_NOT_ENOUGH_MSG = "商品:%s库存不足";
@@ -448,6 +451,9 @@ public class ExceptionConstants {
     //单据录入-单据在该状态不能强制结单
     public static final int DEPOT_HEAD_FORCE_CLOSE_FAILED_CODE = 8500031;
     public static final String DEPOT_HEAD_FORCE_CLOSE_FAILED_MSG = "抱歉，单据:%s在该状态不能强制结单";
+    //单据操作失败
+    public static final int DEPOT_HEAD_OPER_FAILED_CODE = 8500032;
+    public static final String DEPOT_HEAD_OPER_FAILED_MSG = "单据操作失败";
 
     /**
      *  单据明细信息
@@ -572,6 +578,23 @@ public class ExceptionConstants {
     //演示用户禁止操作
     public static final int SYSTEM_CONFIG_TEST_USER_CODE = -1;
     public static final String SYSTEM_CONFIG_TEST_USER_MSG = "演示用户禁止操作";
+
+    /**
+     * 排班管理
+     * type = 115
+     * */
+    //排班冲突
+    public static final int SCHEDULE_CONFLICT_CODE = 11500000;
+    public static final String SCHEDULE_CONFLICT_MSG = "排班冲突";
+    //添加排班信息失败
+    public static final int SCHEDULE_ADD_FAILED_CODE = 11500001;
+    public static final String SCHEDULE_ADD_FAILED_MSG = "添加排班信息失败";
+    //删除排班信息失败
+    public static final int SCHEDULE_DELETE_FAILED_CODE = 11500002;
+    public static final String SCHEDULE_DELETE_FAILED_MSG = "删除排班信息失败";
+    //修改排班信息失败
+    public static final int SCHEDULE_EDIT_FAILED_CODE = 11500003;
+    public static final String SCHEDULE_EDIT_FAILED_MSG = "修改排班信息失败";
 
 
     /**

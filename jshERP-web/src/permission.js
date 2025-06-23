@@ -8,7 +8,7 @@ import { generateIndexRouter } from "@/utils/util"
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
-const whiteList = ['/user/login', '/user/register', '/user/register-result'] // no redirect whitelist
+const whiteList = ['/user/login', '/user/register', '/user/register-result', '/demo', '/demo-accessory', '/chongzuo-board', '/post-processing-tasks'] // no redirect whitelist
 
 router.beforeEach((to, from, next) => {
   NProgress.start() // start progress bar

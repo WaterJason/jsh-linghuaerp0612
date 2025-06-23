@@ -1,541 +1,477 @@
 <template>
-  <div class="chongzuo-kanban">
-    <a-card :bordered="false" title="崇左生产看板">
-      <div class="kanban-container">
-        <!-- 待生产列 -->
-        <div class="kanban-column">
-          <div class="column-header pending">
-            <a-icon type="clock-circle" />
-            <span>待生产</span>
-            <a-badge :count="pendingOrders.length" :number-style="{backgroundColor: '#f5222d'}" />
-          </div>
-          <div class="column-content">
-            <div 
-              v-for="order in pendingOrders" 
-              :key="order.id" 
-              class="work-order-card"
-            >
-              <a-card size="small" :hoverable="true">
-                <div class="card-header">
-                  <span class="order-no">{{ order.workOrderNo }}</span>
-                  <a-tag :color="getWorkTypeColor(order.workType)">
-                    {{ getWorkTypeName(order.workType) }}
-                  </a-tag>
-                </div>
-                <div class="card-content">
-                  <p><strong>生产订单:</strong> {{ order.productionOrderId }}</p>
-                  <p><strong>创建时间:</strong> {{ formatDate(order.createTime) }}</p>
-                  <p v-if="order.remark"><strong>备注:</strong> {{ order.remark }}</p>
-                </div>
-                <div class="card-actions">
-                  <a-button 
-                    type="primary" 
-                    size="small" 
-                    @click="showAssignModal(order)"
-                    icon="user"
-                  >
-                    派单
-                  </a-button>
-                </div>
-              </a-card>
-            </div>
-          </div>
-        </div>
-
-        <!-- 生产中列 -->
-        <div class="kanban-column">
-          <div class="column-header in-progress">
-            <a-icon type="loading" />
-            <span>生产中</span>
-            <a-badge :count="inProgressOrders.length" :number-style="{backgroundColor: '#1890ff'}" />
-          </div>
-          <div class="column-content">
-            <div 
-              v-for="order in inProgressOrders" 
-              :key="order.id" 
-              class="work-order-card"
-            >
-              <a-card size="small" :hoverable="true">
-                <div class="card-header">
-                  <span class="order-no">{{ order.workOrderNo }}</span>
-                  <a-tag :color="getWorkTypeColor(order.workType)">
-                    {{ getWorkTypeName(order.workType) }}
-                  </a-tag>
-                </div>
-                <div class="card-content">
-                  <p><strong>处理人:</strong> {{ order.handlerName || '未分配' }}</p>
-                  <p><strong>开始时间:</strong> {{ formatDate(order.startTime) }}</p>
-                  <p v-if="order.estimatedHours"><strong>预计工时:</strong> {{ order.estimatedHours }}小时</p>
-                </div>
-                <div class="card-actions">
-                  <a-button 
-                    type="primary" 
-                    size="small" 
-                    @click="showCompleteModal(order)"
-                    icon="check"
-                  >
-                    完工
-                  </a-button>
-                </div>
-              </a-card>
-            </div>
-          </div>
-        </div>
-
-        <!-- 待入库列 -->
-        <div class="kanban-column">
-          <div class="column-header completed">
-            <a-icon type="check-circle" />
-            <span>待入库</span>
-            <a-badge :count="completedOrders.length" :number-style="{backgroundColor: '#52c41a'}" />
-          </div>
-          <div class="column-content">
-            <div 
-              v-for="order in completedOrders" 
-              :key="order.id" 
-              class="work-order-card"
-            >
-              <a-card size="small" :hoverable="true">
-                <div class="card-header">
-                  <span class="order-no">{{ order.workOrderNo }}</span>
-                  <a-tag :color="getWorkTypeColor(order.workType)">
-                    {{ getWorkTypeName(order.workType) }}
-                  </a-tag>
-                </div>
-                <div class="card-content">
-                  <p><strong>处理人:</strong> {{ order.handlerName }}</p>
-                  <p><strong>完成时间:</strong> {{ formatDate(order.completeTime) }}</p>
-                  <p v-if="order.actualHours"><strong>实际工时:</strong> {{ order.actualHours }}小时</p>
-                </div>
-                <div class="card-actions">
-                  <a-button 
-                    type="default" 
-                    size="small" 
-                    @click="viewCompleteImages(order)"
-                    icon="picture"
-                    v-if="order.completeImages"
-                  >
-                    查看图片
-                  </a-button>
-                </div>
-              </a-card>
-            </div>
-          </div>
-        </div>
-      </div>
-    </a-card>
-
-    <!-- 派单对话框 -->
-    <a-modal
-      title="派单"
-      :visible="assignModalVisible"
-      @ok="handleAssign"
-      @cancel="assignModalVisible = false"
-      :confirmLoading="assignLoading"
-    >
-      <a-form :form="assignForm" layout="vertical">
-        <a-form-item label="工单号">
-          <a-input :value="currentOrder.workOrderNo" disabled />
-        </a-form-item>
-        <a-form-item label="选择处理人">
-          <a-select
-            v-decorator="['handlerId', { rules: [{ required: true, message: '请选择处理人' }] }]"
-            placeholder="请选择处理人"
-            @change="onHandlerChange"
-          >
-            <a-select-option v-for="user in userList" :key="user.id" :value="user.id">
-              {{ user.username }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-      </a-form>
-    </a-modal>
-
-    <!-- 完工对话框 -->
-    <a-modal
-      title="完工确认"
-      :visible="completeModalVisible"
-      @ok="handleComplete"
-      @cancel="completeModalVisible = false"
-      :confirmLoading="completeLoading"
-      width="600px"
-    >
-      <a-form :form="completeForm" layout="vertical">
-        <a-form-item label="工单号">
-          <a-input :value="currentOrder.workOrderNo" disabled />
-        </a-form-item>
-        <a-form-item label="上传完工图片">
-          <a-upload
-            v-decorator="['completeImages']"
-            :file-list="fileList"
-            :before-upload="beforeUpload"
-            @change="handleUploadChange"
-            list-type="picture-card"
-            :multiple="true"
-            accept="image/*"
-          >
-            <div v-if="fileList.length < 8">
-              <a-icon type="plus" />
-              <div class="ant-upload-text">上传图片</div>
-            </div>
-          </a-upload>
-        </a-form-item>
-        <a-form-item label="质检备注">
-          <a-textarea
-            v-decorator="['qualityNotes']"
-            placeholder="请输入质检备注"
-            :rows="4"
+  <div class="kanban-container">
+    <!-- 顶部统计卡片 -->
+    <a-row :gutter="16" style="margin-bottom: 24px;">
+      <a-col :span="6">
+        <a-card>
+          <a-statistic
+            title="今日生产订单"
+            :value="statistics.todayOrders"
+            :value-style="{ color: '#3f8600' }"
+            suffix="个"
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card>
+          <a-statistic
+            title="生产中订单"
+            :value="statistics.processingOrders"
+            :value-style="{ color: '#1890ff' }"
+            suffix="个"
+          />
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card>
+          <a-statistic
+            title="今日完成"
+            :value="statistics.completedToday"
+            :value-style="{ color: '#52c41a' }"
+            suffix="个"
+          />
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card>
+          <a-statistic
+            title="设备利用率"
+            :value="statistics.equipmentUtilization"
+            :value-style="{ color: '#722ed1' }"
+            suffix="%"
+          />
+        </a-card>
+      </a-col>
+    </a-row>
 
-    <!-- 图片预览对话框 -->
+    <!-- 看板主体 -->
+    <a-row :gutter="16">
+      <!-- 待生产 -->
+      <a-col :span="6">
+        <a-card title="待生产" class="kanban-column">
+          <template slot="extra">
+            <a-badge :count="pendingTasks.length" />
+          </template>
+          <div class="task-list">
+            <div
+              v-for="task in pendingTasks"
+              :key="task.id"
+              class="task-card pending"
+              @click="showTaskDetail(task)"
+            >
+              <div class="task-header">
+                <span class="task-title">{{ task.orderNumber }}</span>
+                <a-tag color="orange">{{ task.priority }}</a-tag>
+              </div>
+              <div class="task-content">
+                <p><strong>产品：</strong>{{ task.productName }}</p>
+                <p><strong>数量：</strong>{{ task.quantity }}</p>
+                <p><strong>预计：</strong>{{ task.expectedDate }}</p>
+              </div>
+              <div class="task-footer">
+                <a-button size="small" type="primary" @click.stop="startProduction(task)">
+                  开始生产
+                </a-button>
+              </div>
+            </div>
+          </div>
+        </a-card>
+      </a-col>
+
+      <!-- 生产中 -->
+      <a-col :span="6">
+        <a-card title="生产中" class="kanban-column">
+          <template slot="extra">
+            <a-badge :count="processingTasks.length" />
+          </template>
+          <div class="task-list">
+            <div
+              v-for="task in processingTasks"
+              :key="task.id"
+              class="task-card processing"
+              @click="showTaskDetail(task)"
+            >
+              <div class="task-header">
+                <span class="task-title">{{ task.orderNumber }}</span>
+                <a-tag color="blue">{{ task.priority }}</a-tag>
+              </div>
+              <div class="task-content">
+                <p><strong>产品：</strong>{{ task.productName }}</p>
+                <p><strong>数量：</strong>{{ task.quantity }}</p>
+                <p><strong>进度：</strong></p>
+                <a-progress :percent="task.progress" size="small" />
+                <p><strong>负责人：</strong>{{ task.assignee }}</p>
+              </div>
+              <div class="task-footer">
+                <a-button size="small" @click.stop="reportProgress(task)">
+                  报工
+                </a-button>
+                <a-button size="small" type="primary" @click.stop="completeProduction(task)">
+                  完成
+                </a-button>
+              </div>
+            </div>
+          </div>
+        </a-card>
+      </a-col>
+
+      <!-- 质检中 -->
+      <a-col :span="6">
+        <a-card title="质检中" class="kanban-column">
+          <template slot="extra">
+            <a-badge :count="qualityTasks.length" />
+          </template>
+          <div class="task-list">
+            <div
+              v-for="task in qualityTasks"
+              :key="task.id"
+              class="task-card quality"
+              @click="showTaskDetail(task)"
+            >
+              <div class="task-header">
+                <span class="task-title">{{ task.orderNumber }}</span>
+                <a-tag color="purple">{{ task.priority }}</a-tag>
+              </div>
+              <div class="task-content">
+                <p><strong>产品：</strong>{{ task.productName }}</p>
+                <p><strong>数量：</strong>{{ task.quantity }}</p>
+                <p><strong>质检员：</strong>{{ task.inspector }}</p>
+              </div>
+              <div class="task-footer">
+                <a-button size="small" type="primary" @click.stop="passQuality(task)">
+                  通过
+                </a-button>
+                <a-button size="small" danger @click.stop="rejectQuality(task)">
+                  不合格
+                </a-button>
+              </div>
+            </div>
+          </div>
+        </a-card>
+      </a-col>
+
+      <!-- 已完成 -->
+      <a-col :span="6">
+        <a-card title="已完成" class="kanban-column">
+          <template slot="extra">
+            <a-badge :count="completedTasks.length" />
+          </template>
+          <div class="task-list">
+            <div
+              v-for="task in completedTasks"
+              :key="task.id"
+              class="task-card completed"
+              @click="showTaskDetail(task)"
+            >
+              <div class="task-header">
+                <span class="task-title">{{ task.orderNumber }}</span>
+                <a-tag color="green">{{ task.priority }}</a-tag>
+              </div>
+              <div class="task-content">
+                <p><strong>产品：</strong>{{ task.productName }}</p>
+                <p><strong>数量：</strong>{{ task.quantity }}</p>
+                <p><strong>完成时间：</strong>{{ task.completedTime }}</p>
+              </div>
+              <div class="task-footer">
+                <a-button size="small" @click.stop="viewReport(task)">
+                  查看报告
+                </a-button>
+              </div>
+            </div>
+          </div>
+        </a-card>
+      </a-col>
+    </a-row>
+
+    <!-- 任务详情弹窗 -->
     <a-modal
-      title="完工图片"
-      :visible="imagePreviewVisible"
-      @cancel="imagePreviewVisible = false"
+      title="任务详情"
+      :visible="detailVisible"
+      @cancel="detailVisible = false"
       :footer="null"
       width="800px"
     >
-      <div class="image-preview-container">
-        <img 
-          v-for="(image, index) in previewImages" 
-          :key="index" 
-          :src="image" 
-          :alt="`完工图片${index + 1}`"
-          class="preview-image"
-        />
+      <div v-if="selectedTask">
+        <a-descriptions :column="2" bordered>
+          <a-descriptions-item label="订单编号">{{ selectedTask.orderNumber }}</a-descriptions-item>
+          <a-descriptions-item label="产品名称">{{ selectedTask.productName }}</a-descriptions-item>
+          <a-descriptions-item label="产品规格">{{ selectedTask.specification }}</a-descriptions-item>
+          <a-descriptions-item label="生产数量">{{ selectedTask.quantity }}</a-descriptions-item>
+          <a-descriptions-item label="优先级">
+            <a-tag :color="getPriorityColor(selectedTask.priority)">{{ selectedTask.priority }}</a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="当前状态">
+            <a-tag :color="getStatusColor(selectedTask.status)">{{ getStatusText(selectedTask.status) }}</a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="生产进度">
+            <a-progress :percent="selectedTask.progress" />
+          </a-descriptions-item>
+          <a-descriptions-item label="负责人">{{ selectedTask.assignee || '未分配' }}</a-descriptions-item>
+          <a-descriptions-item label="创建时间">{{ selectedTask.createTime }}</a-descriptions-item>
+          <a-descriptions-item label="预计完成">{{ selectedTask.expectedDate }}</a-descriptions-item>
+        </a-descriptions>
       </div>
     </a-modal>
   </div>
 </template>
 
 <script>
-import { getAction, postAction } from '@/api/manage'
-
 export default {
   name: 'ChongzuoKanban',
   data() {
     return {
-      // 看板数据
-      pendingOrders: [],
-      inProgressOrders: [],
-      completedOrders: [],
-      
-      // 派单相关
-      assignModalVisible: false,
-      assignLoading: false,
-      assignForm: this.$form.createForm(this),
-      userList: [],
-      
-      // 完工相关
-      completeModalVisible: false,
-      completeLoading: false,
-      completeForm: this.$form.createForm(this),
-      fileList: [],
-      
-      // 图片预览
-      imagePreviewVisible: false,
-      previewImages: [],
-      
-      // 当前操作的工单
-      currentOrder: {},
-      
-      // 定时刷新
-      refreshTimer: null
+      detailVisible: false,
+      selectedTask: null,
+      statistics: {
+        todayOrders: 15,
+        processingOrders: 8,
+        completedToday: 12,
+        equipmentUtilization: 85
+      },
+      pendingTasks: [
+        {
+          id: 1,
+          orderNumber: 'PO2024001',
+          productName: '掐丝珐琅花瓶',
+          specification: '高30cm',
+          quantity: 10,
+          priority: '高',
+          status: 'pending',
+          progress: 0,
+          expectedDate: '2024-06-25',
+          createTime: '2024-06-23 09:00:00'
+        },
+        {
+          id: 2,
+          orderNumber: 'PO2024002',
+          productName: '珐琅首饰盒',
+          specification: '15x10cm',
+          quantity: 20,
+          priority: '中',
+          status: 'pending',
+          progress: 0,
+          expectedDate: '2024-06-26',
+          createTime: '2024-06-23 10:30:00'
+        }
+      ],
+      processingTasks: [
+        {
+          id: 3,
+          orderNumber: 'PO2024003',
+          productName: '掐丝珐琅盘',
+          specification: '直径25cm',
+          quantity: 5,
+          priority: '高',
+          status: 'processing',
+          progress: 65,
+          assignee: '张师傅',
+          expectedDate: '2024-06-24',
+          createTime: '2024-06-22 14:00:00'
+        }
+      ],
+      qualityTasks: [
+        {
+          id: 4,
+          orderNumber: 'PO2024004',
+          productName: '珐琅茶具',
+          specification: '一套6件',
+          quantity: 3,
+          priority: '中',
+          status: 'quality',
+          progress: 100,
+          inspector: '李质检',
+          expectedDate: '2024-06-23',
+          createTime: '2024-06-21 09:00:00'
+        }
+      ],
+      completedTasks: [
+        {
+          id: 5,
+          orderNumber: 'PO2024005',
+          productName: '掐丝珐琅摆件',
+          specification: '高20cm',
+          quantity: 8,
+          priority: '低',
+          status: 'completed',
+          progress: 100,
+          completedTime: '2024-06-23 16:30:00',
+          createTime: '2024-06-20 11:00:00'
+        }
+      ]
     }
   },
-  
   mounted() {
-    this.loadKanbanData()
-    this.loadUserList()
-    // 每30秒自动刷新数据
-    this.refreshTimer = setInterval(() => {
-      this.loadKanbanData()
-    }, 30000)
+    this.loadData()
+    // 设置定时刷新
+    this.timer = setInterval(() => {
+      this.loadData()
+    }, 30000) // 30秒刷新一次
   },
-  
   beforeDestroy() {
-    if (this.refreshTimer) {
-      clearInterval(this.refreshTimer)
+    if (this.timer) {
+      clearInterval(this.timer)
     }
   },
-  
   methods: {
-    // 加载看板数据
-    loadKanbanData() {
-      getAction('/workOrder/kanbanData').then(res => {
-        if (res.code === 200) {
-          this.pendingOrders = res.data.pendingOrders || []
-          this.inProgressOrders = res.data.inProgressOrders || []
-          this.completedOrders = res.data.completedOrders || []
-        } else {
-          this.$message.error('加载看板数据失败：' + res.data.message)
-        }
-      }).catch(err => {
-        this.$message.error('加载看板数据失败')
-        console.error(err)
-      })
+    loadData() {
+      // 这里应该调用API加载数据
+      console.log('加载看板数据...')
     },
-    
-    // 加载用户列表
-    loadUserList() {
-      getAction('/user/list').then(res => {
-        if (res.code === 200) {
-          this.userList = res.data.rows || []
-        }
-      }).catch(err => {
-        console.error('加载用户列表失败', err)
-      })
+    showTaskDetail(task) {
+      this.selectedTask = task
+      this.detailVisible = true
     },
-    
-    // 显示派单对话框
-    showAssignModal(order) {
-      this.currentOrder = order
-      this.assignModalVisible = true
-      this.assignForm.resetFields()
-    },
-    
-    // 处理派单
-    handleAssign() {
-      this.assignForm.validateFields((err, values) => {
-        if (!err) {
-          this.assignLoading = true
-          const selectedUser = this.userList.find(user => user.id === values.handlerId)
-          
-          postAction('/workOrder/assign', {
-            id: this.currentOrder.id,
-            handlerId: values.handlerId,
-            handlerName: selectedUser ? selectedUser.username : ''
-          }).then(res => {
-            if (res.code === 200) {
-              this.$message.success('派单成功')
-              this.assignModalVisible = false
-              this.loadKanbanData()
-            } else {
-              this.$message.error('派单失败：' + res.data.message)
-            }
-          }).catch(err => {
-            this.$message.error('派单失败')
-            console.error(err)
-          }).finally(() => {
-            this.assignLoading = false
-          })
+    startProduction(task) {
+      this.$confirm({
+        title: '确认开始生产',
+        content: `确定要开始生产订单"${task.orderNumber}"吗？`,
+        onOk: () => {
+          this.$message.success('生产已开始')
+          this.loadData()
         }
       })
     },
-    
-    // 处理人选择变化
-    onHandlerChange(value) {
-      // 可以在这里添加额外的逻辑
-    },
-    
-    // 显示完工对话框
-    showCompleteModal(order) {
-      this.currentOrder = order
-      this.completeModalVisible = true
-      this.completeForm.resetFields()
-      this.fileList = []
-    },
-    
-    // 处理完工
-    handleComplete() {
-      this.completeForm.validateFields((err, values) => {
-        if (!err) {
-          this.completeLoading = true
-          
-          // 处理上传的图片
-          const imageUrls = this.fileList.map(file => file.response ? file.response.url : file.url).filter(url => url)
-          
-          postAction('/workOrder/complete', {
-            id: this.currentOrder.id,
-            completeImages: JSON.stringify(imageUrls),
-            qualityNotes: values.qualityNotes
-          }).then(res => {
-            if (res.code === 200) {
-              this.$message.success('完工确认成功')
-              this.completeModalVisible = false
-              this.loadKanbanData()
-            } else {
-              this.$message.error('完工确认失败：' + res.data.message)
-            }
-          }).catch(err => {
-            this.$message.error('完工确认失败')
-            console.error(err)
-          }).finally(() => {
-            this.completeLoading = false
-          })
+    completeProduction(task) {
+      this.$confirm({
+        title: '确认完成生产',
+        content: `确定要完成生产订单"${task.orderNumber}"吗？`,
+        onOk: () => {
+          this.$message.success('生产已完成，进入质检环节')
+          this.loadData()
         }
       })
     },
-    
-    // 文件上传前处理
-    beforeUpload(file) {
-      const isImage = file.type.indexOf('image/') === 0
-      if (!isImage) {
-        this.$message.error('只能上传图片文件!')
-        return false
-      }
-      const isLt20M = file.size / 1024 / 1024 < 20
-      if (!isLt20M) {
-        this.$message.error('图片大小不能超过20MB!')
-        return false
-      }
-      return true
+    reportProgress(task) {
+      this.$message.info('打开报工界面...')
     },
-    
-    // 文件上传变化处理
-    handleUploadChange({ fileList }) {
-      this.fileList = fileList
+    passQuality(task) {
+      this.$confirm({
+        title: '确认质检通过',
+        content: `确定订单"${task.orderNumber}"质检通过吗？`,
+        onOk: () => {
+          this.$message.success('质检通过，订单已完成')
+          this.loadData()
+        }
+      })
     },
-    
-    // 查看完工图片
-    viewCompleteImages(order) {
-      try {
-        this.previewImages = JSON.parse(order.completeImages || '[]')
-        this.imagePreviewVisible = true
-      } catch (e) {
-        this.$message.error('图片数据格式错误')
+    rejectQuality(task) {
+      this.$confirm({
+        title: '确认质检不合格',
+        content: `确定订单"${task.orderNumber}"质检不合格吗？`,
+        onOk: () => {
+          this.$message.warning('质检不合格，返回生产环节')
+          this.loadData()
+        }
+      })
+    },
+    viewReport(task) {
+      this.$message.info('查看生产报告...')
+    },
+    getStatusColor(status) {
+      const colors = {
+        pending: 'orange',
+        processing: 'blue',
+        quality: 'purple',
+        completed: 'green'
       }
+      return colors[status] || 'default'
     },
-    
-    // 获取工单类型颜色
-    getWorkTypeColor(workType) {
-      const colorMap = {
-        'CLOISONNE': 'blue',
-        'ACCESSORY': 'green',
-        'POST_PROCESS': 'orange'
+    getStatusText(status) {
+      const texts = {
+        pending: '待生产',
+        processing: '生产中',
+        quality: '质检中',
+        completed: '已完成'
       }
-      return colorMap[workType] || 'default'
+      return texts[status] || status
     },
-    
-    // 获取工单类型名称
-    getWorkTypeName(workType) {
-      const nameMap = {
-        'CLOISONNE': '掐丝点蓝',
-        'ACCESSORY': '配饰制作',
-        'POST_PROCESS': '后工'
+    getPriorityColor(priority) {
+      const colors = {
+        高: 'red',
+        中: 'orange',
+        低: 'green'
       }
-      return nameMap[workType] || workType
-    },
-    
-    // 格式化日期
-    formatDate(dateStr) {
-      if (!dateStr) return '-'
-      const date = new Date(dateStr)
-      return date.toLocaleString('zh-CN')
+      return colors[priority] || 'default'
     }
   }
 }
 </script>
 
 <style scoped>
-.chongzuo-kanban {
+.kanban-container {
   padding: 24px;
   background: #f0f2f5;
-  min-height: 100vh;
-}
-
-.kanban-container {
-  display: flex;
-  gap: 24px;
-  overflow-x: auto;
-  padding-bottom: 16px;
+  min-height: calc(100vh - 64px);
 }
 
 .kanban-column {
-  flex: 1;
-  min-width: 320px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  height: 600px;
 }
 
-.column-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 16px;
-}
-
-.column-header.pending {
-  color: #f5222d;
-  background: #fff2f0;
-}
-
-.column-header.in-progress {
-  color: #1890ff;
-  background: #f0f8ff;
-}
-
-.column-header.completed {
-  color: #52c41a;
-  background: #f6ffed;
-}
-
-.column-content {
-  padding: 16px;
-  max-height: 70vh;
+.task-list {
+  height: 520px;
   overflow-y: auto;
 }
 
-.work-order-card {
+.task-card {
+  background: white;
+  border-radius: 6px;
+  padding: 12px;
   margin-bottom: 12px;
+  border-left: 4px solid;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.work-order-card:last-child {
-  margin-bottom: 0;
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-.card-header {
+.task-card.pending {
+  border-left-color: #faad14;
+}
+
+.task-card.processing {
+  border-left-color: #1890ff;
+}
+
+.task-card.quality {
+  border-left-color: #722ed1;
+}
+
+.task-card.completed {
+  border-left-color: #52c41a;
+}
+
+.task-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 8px;
+}
+
+.task-title {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.task-content {
   margin-bottom: 12px;
 }
 
-.order-no {
-  font-weight: 600;
-  color: #1890ff;
-}
-
-.card-content p {
+.task-content p {
   margin: 4px 0;
   font-size: 12px;
   color: #666;
 }
 
-.card-actions {
-  margin-top: 12px;
-  text-align: center;
-}
-
-.image-preview-container {
+.task-footer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  gap: 8px;
 }
 
-.preview-image {
-  max-width: 200px;
-  max-height: 200px;
-  object-fit: cover;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .kanban-container {
-    flex-direction: column;
-  }
-  
-  .kanban-column {
-    min-width: auto;
-  }
+.task-footer .ant-btn {
+  flex: 1;
 }
 </style>

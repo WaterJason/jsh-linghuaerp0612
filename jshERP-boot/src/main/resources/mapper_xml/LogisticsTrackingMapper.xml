@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jsh.erp.datasource.mappers.LogisticsTrackingMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.jsh.erp.datasource.entities.LogisticsTracking">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="tracking_number" property="trackingNumber" jdbcType="VARCHAR"/>
+        <result column="work_order_id" property="workOrderId" jdbcType="BIGINT"/>
+        <result column="work_order_number" property="workOrderNumber" jdbcType="VARCHAR"/>
+        <result column="task_id" property="taskId" jdbcType="BIGINT"/>
+        <result column="task_number" property="taskNumber" jdbcType="VARCHAR"/>
+        <result column="logistics_type" property="logisticsType" jdbcType="VARCHAR"/>
+        <result column="product_id" property="productId" jdbcType="BIGINT"/>
+        <result column="product_name" property="productName" jdbcType="VARCHAR"/>
+        <result column="quantity" property="quantity" jdbcType="DECIMAL"/>
+        <result column="unit_name" property="unitName" jdbcType="VARCHAR"/>
+        <result column="from_location" property="fromLocation" jdbcType="VARCHAR"/>
+        <result column="to_location" property="toLocation" jdbcType="VARCHAR"/>
+        <result column="carrier_name" property="carrierName" jdbcType="VARCHAR"/>
+        <result column="carrier_contact" property="carrierContact" jdbcType="VARCHAR"/>
+        <result column="tracking_code" property="trackingCode" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="ship_time" property="shipTime" jdbcType="TIMESTAMP"/>
+        <result column="estimated_arrival_time" property="estimatedArrivalTime" jdbcType="TIMESTAMP"/>
+        <result column="actual_arrival_time" property="actualArrivalTime" jdbcType="TIMESTAMP"/>
+        <result column="receive_time" property="receiveTime" jdbcType="TIMESTAMP"/>
+        <result column="receiver_name" property="receiverName" jdbcType="VARCHAR"/>
+        <result column="receiver_contact" property="receiverContact" jdbcType="VARCHAR"/>
+        <result column="logistics_cost" property="logisticsCost" jdbcType="DECIMAL"/>
+        <result column="tracking_info" property="trackingInfo" jdbcType="VARCHAR"/>
+        <result column="exception_description" property="exceptionDescription" jdbcType="VARCHAR"/>
+        <result column="tenant_id" property="tenantId" jdbcType="BIGINT"/>
+        <result column="delete_flag" property="deleteFlag" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user" property="createUser" jdbcType="BIGINT"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="update_user" property="updateUser" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, tracking_number, work_order_id, work_order_number, task_id, task_number, logistics_type,
+        product_id, product_name, quantity, unit_name, from_location, to_location,
+        carrier_name, carrier_contact, tracking_code, status, ship_time, estimated_arrival_time,
+        actual_arrival_time, receive_time, receiver_name, receiver_contact, logistics_cost,
+        tracking_info, exception_description, tenant_id, delete_flag, create_time, create_user, update_time, update_user
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            delete_flag = '0'
+            <if test="parameterMap.tenantId != null">
+                AND tenant_id = #{parameterMap.tenantId}
+            </if>
+            <if test="parameterMap.trackingNumber != null and parameterMap.trackingNumber != ''">
+                AND tracking_number LIKE CONCAT('%', #{parameterMap.trackingNumber}, '%')
+            </if>
+            <if test="parameterMap.workOrderNumber != null and parameterMap.workOrderNumber != ''">
+                AND work_order_number LIKE CONCAT('%', #{parameterMap.workOrderNumber}, '%')
+            </if>
+            <if test="parameterMap.taskNumber != null and parameterMap.taskNumber != ''">
+                AND task_number LIKE CONCAT('%', #{parameterMap.taskNumber}, '%')
+            </if>
+            <if test="parameterMap.logisticsType != null and parameterMap.logisticsType != ''">
+                AND logistics_type = #{parameterMap.logisticsType}
+            </if>
+            <if test="parameterMap.productName != null and parameterMap.productName != ''">
+                AND product_name LIKE CONCAT('%', #{parameterMap.productName}, '%')
+            </if>
+            <if test="parameterMap.status != null and parameterMap.status != ''">
+                AND status = #{parameterMap.status}
+            </if>
+            <if test="parameterMap.carrierName != null and parameterMap.carrierName != ''">
+                AND carrier_name LIKE CONCAT('%', #{parameterMap.carrierName}, '%')
+            </if>
+            <if test="parameterMap.fromLocation != null and parameterMap.fromLocation != ''">
+                AND from_location LIKE CONCAT('%', #{parameterMap.fromLocation}, '%')
+            </if>
+            <if test="parameterMap.toLocation != null and parameterMap.toLocation != ''">
+                AND to_location LIKE CONCAT('%', #{parameterMap.toLocation}, '%')
+            </if>
+            <if test="parameterMap.shipTimeFrom != null">
+                AND ship_time >= #{parameterMap.shipTimeFrom}
+            </if>
+            <if test="parameterMap.shipTimeTo != null">
+                AND ship_time &lt;= #{parameterMap.shipTimeTo}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据条件查询物流追踪列表 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_logistics_tracking
+        <include refid="Where_Clause"/>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据条件统计物流追踪数量 -->
+    <select id="countByCondition" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM jsh_logistics_tracking
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 根据追踪号查询物流追踪信息 -->
+    <select id="selectByTrackingNumber" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_logistics_tracking
+        WHERE tracking_number = #{trackingNumber}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+    </select>
+
+    <!-- 根据工单查询物流追踪列表 -->
+    <select id="selectByWorkOrderId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_logistics_tracking
+        WHERE work_order_id = #{workOrderId}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据任务查询物流追踪列表 -->
+    <select id="selectByTaskId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_logistics_tracking
+        WHERE task_id = #{taskId}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据状态查询物流追踪列表 -->
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_logistics_tracking
+        WHERE status = #{status}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 更新物流状态 -->
+    <update id="updateStatus">
+        UPDATE jsh_logistics_tracking
+        SET status = #{status},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新发货时间 -->
+    <update id="updateShipTime">
+        UPDATE jsh_logistics_tracking
+        SET ship_time = #{shipTime},
+            status = 'SHIPPED',
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新到达时间 -->
+    <update id="updateArrivalTime">
+        UPDATE jsh_logistics_tracking
+        SET actual_arrival_time = #{actualArrivalTime},
+            status = 'DELIVERED',
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 批量删除追踪记录（软删除） -->
+    <update id="batchDelete">
+        UPDATE jsh_logistics_tracking
+        SET delete_flag = '1',
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND delete_flag = '0'
+    </update>
+
+    <!-- 获取物流统计信息 -->
+    <select id="getLogisticsStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as totalLogistics,
+            COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pendingLogistics,
+            COUNT(CASE WHEN status = 'SHIPPED' THEN 1 END) as shippedLogistics,
+            COUNT(CASE WHEN status = 'IN_TRANSIT' THEN 1 END) as inTransitLogistics,
+            COUNT(CASE WHEN status = 'DELIVERED' THEN 1 END) as deliveredLogistics,
+            COUNT(CASE WHEN status = 'EXCEPTION' THEN 1 END) as exceptionLogistics,
+            SUM(quantity) as totalQuantity,
+            SUM(CASE WHEN status = 'DELIVERED' THEN quantity ELSE 0 END) as deliveredQuantity,
+            SUM(logistics_cost) as totalCost,
+            AVG(logistics_cost) as avgCost,
+            AVG(CASE 
+                WHEN status = 'DELIVERED' AND ship_time IS NOT NULL AND actual_arrival_time IS NOT NULL 
+                THEN DATEDIFF(actual_arrival_time, ship_time) 
+                ELSE NULL 
+            END) as avgTransportTime
+        FROM jsh_logistics_tracking
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+    </select>
+
+    <!-- 根据状态统计物流数量 -->
+    <select id="getStatusStatistics" resultType="java.util.Map">
+        SELECT 
+            status,
+            COUNT(*) as count,
+            SUM(quantity) as totalQuantity,
+            SUM(logistics_cost) as totalCost
+        FROM jsh_logistics_tracking
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        GROUP BY status
+        ORDER BY count DESC
+    </select>
+
+    <!-- 查询在途物流 -->
+    <select id="getInTransitLogistics" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_logistics_tracking
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status IN ('SHIPPED', 'IN_TRANSIT')
+        ORDER BY ship_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询超期物流 -->
+    <select id="getOverdueLogistics" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_logistics_tracking
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status IN ('SHIPPED', 'IN_TRANSIT')
+          AND estimated_arrival_time &lt; NOW()
+        ORDER BY estimated_arrival_time ASC
+    </select>
+
+</mapper>

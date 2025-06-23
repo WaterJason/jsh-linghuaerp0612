@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jsh.erp.datasource.mappers.PostProcessingTaskMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.jsh.erp.datasource.entities.PostProcessingTask">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="task_number" property="taskNumber" jdbcType="VARCHAR"/>
+        <result column="product_id" property="productId" jdbcType="BIGINT"/>
+        <result column="product_name" property="productName" jdbcType="VARCHAR"/>
+        <result column="task_type" property="taskType" jdbcType="VARCHAR"/>
+        <result column="task_description" property="taskDescription" jdbcType="VARCHAR"/>
+        <result column="quantity" property="quantity" jdbcType="DECIMAL"/>
+        <result column="unit_id" property="unitId" jdbcType="BIGINT"/>
+        <result column="unit_name" property="unitName" jdbcType="VARCHAR"/>
+        <result column="worker_id" property="workerId" jdbcType="BIGINT"/>
+        <result column="worker_name" property="workerName" jdbcType="VARCHAR"/>
+        <result column="labor_cost_amount" property="laborCostAmount" jdbcType="DECIMAL"/>
+        <result column="salary_amount" property="salaryAmount" jdbcType="DECIMAL"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="priority" property="priority" jdbcType="VARCHAR"/>
+        <result column="plan_start_time" property="planStartTime" jdbcType="TIMESTAMP"/>
+        <result column="plan_end_time" property="planEndTime" jdbcType="TIMESTAMP"/>
+        <result column="actual_start_time" property="actualStartTime" jdbcType="TIMESTAMP"/>
+        <result column="actual_end_time" property="actualEndTime" jdbcType="TIMESTAMP"/>
+        <result column="processing_standard" property="processingStandard" jdbcType="VARCHAR"/>
+        <result column="quality_requirement" property="qualityRequirement" jdbcType="VARCHAR"/>
+        <result column="equipment" property="equipment" jdbcType="VARCHAR"/>
+        <result column="processing_result" property="processingResult" jdbcType="VARCHAR"/>
+        <result column="quality_grade" property="qualityGrade" jdbcType="VARCHAR"/>
+        <result column="quality_score" property="qualityScore" jdbcType="DECIMAL"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="tenant_id" property="tenantId" jdbcType="BIGINT"/>
+        <result column="delete_flag" property="deleteFlag" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user" property="createUser" jdbcType="BIGINT"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="update_user" property="updateUser" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, task_number, product_id, product_name, task_type, task_description, quantity, unit_id, unit_name,
+        worker_id, worker_name, labor_cost_amount, salary_amount, status, priority,
+        plan_start_time, plan_end_time, actual_start_time, actual_end_time,
+        processing_standard, quality_requirement, equipment, processing_result, quality_grade, quality_score,
+        remark, tenant_id, delete_flag, create_time, create_user, update_time, update_user
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            delete_flag = '0'
+            <if test="parameterMap.tenantId != null">
+                AND tenant_id = #{parameterMap.tenantId}
+            </if>
+            <if test="parameterMap.taskNumber != null and parameterMap.taskNumber != ''">
+                AND task_number LIKE CONCAT('%', #{parameterMap.taskNumber}, '%')
+            </if>
+            <if test="parameterMap.productName != null and parameterMap.productName != ''">
+                AND product_name LIKE CONCAT('%', #{parameterMap.productName}, '%')
+            </if>
+            <if test="parameterMap.taskType != null and parameterMap.taskType != ''">
+                AND task_type = #{parameterMap.taskType}
+            </if>
+            <if test="parameterMap.status != null and parameterMap.status != ''">
+                AND status = #{parameterMap.status}
+            </if>
+            <if test="parameterMap.priority != null and parameterMap.priority != ''">
+                AND priority = #{parameterMap.priority}
+            </if>
+            <if test="parameterMap.workerId != null">
+                AND worker_id = #{parameterMap.workerId}
+            </if>
+            <if test="parameterMap.workerName != null and parameterMap.workerName != ''">
+                AND worker_name LIKE CONCAT('%', #{parameterMap.workerName}, '%')
+            </if>
+            <if test="parameterMap.planStartTimeFrom != null">
+                AND plan_start_time >= #{parameterMap.planStartTimeFrom}
+            </if>
+            <if test="parameterMap.planStartTimeTo != null">
+                AND plan_start_time &lt;= #{parameterMap.planStartTimeTo}
+            </if>
+            <if test="parameterMap.planEndTimeFrom != null">
+                AND plan_end_time >= #{parameterMap.planEndTimeFrom}
+            </if>
+            <if test="parameterMap.planEndTimeTo != null">
+                AND plan_end_time &lt;= #{parameterMap.planEndTimeTo}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据条件查询后工任务列表 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_post_processing_task
+        <include refid="Where_Clause"/>
+        ORDER BY 
+            CASE priority
+                WHEN 'URGENT' THEN 1
+                WHEN 'HIGH' THEN 2
+                WHEN 'MEDIUM' THEN 3
+                WHEN 'LOW' THEN 4
+                ELSE 5
+            END,
+            plan_start_time ASC,
+            create_time DESC
+    </select>
+
+    <!-- 根据条件统计后工任务数量 -->
+    <select id="countByCondition" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM jsh_post_processing_task
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 根据任务编号查询后工任务信息 -->
+    <select id="selectByTaskNumber" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_post_processing_task
+        WHERE task_number = #{taskNumber}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+    </select>
+
+    <!-- 根据状态查询后工任务列表 -->
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_post_processing_task
+        WHERE status = #{status}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY priority, plan_start_time ASC
+    </select>
+
+    <!-- 根据任务类型查询后工任务列表 -->
+    <select id="selectByTaskType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_post_processing_task
+        WHERE task_type = #{taskType}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY priority, plan_start_time ASC
+    </select>
+
+    <!-- 根据工人查询后工任务列表 -->
+    <select id="selectByWorkerId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_post_processing_task
+        WHERE worker_id = #{workerId}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY priority, plan_start_time ASC
+    </select>
+
+    <!-- 根据成品查询后工任务列表 -->
+    <select id="selectByProductId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_post_processing_task
+        WHERE product_id = #{productId}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 根据优先级查询后工任务列表 -->
+    <select id="selectByPriority" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_post_processing_task
+        WHERE priority = #{priority}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY plan_start_time ASC
+    </select>
+
+    <!-- 更新任务状态 -->
+    <update id="updateStatus">
+        UPDATE jsh_post_processing_task
+        SET status = #{status},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新任务开始时间 -->
+    <update id="updateStartTime">
+        UPDATE jsh_post_processing_task
+        SET actual_start_time = #{actualStartTime},
+            status = 'IN_PROGRESS',
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新任务完成时间 -->
+    <update id="updateEndTime">
+        UPDATE jsh_post_processing_task
+        SET actual_end_time = #{actualEndTime},
+            status = 'COMPLETED',
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新任务优先级 -->
+    <update id="updatePriority">
+        UPDATE jsh_post_processing_task
+        SET priority = #{priority},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 分配工人 -->
+    <update id="assignWorker">
+        UPDATE jsh_post_processing_task
+        SET worker_id = #{workerId},
+            worker_name = #{workerName},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 更新处理结果 -->
+    <update id="updateProcessingResult">
+        UPDATE jsh_post_processing_task
+        SET processing_result = #{processingResult},
+            quality_grade = #{qualityGrade},
+            quality_score = #{qualityScore},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 批量更新状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE jsh_post_processing_task
+        SET status = #{status},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND delete_flag = '0'
+    </update>
+
+    <!-- 批量分配工人 -->
+    <update id="batchAssignWorker">
+        UPDATE jsh_post_processing_task
+        SET worker_id = #{workerId},
+            worker_name = #{workerName},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND delete_flag = '0'
+    </update>
+
+    <!-- 批量删除任务（软删除） -->
+    <update id="batchDelete">
+        UPDATE jsh_post_processing_task
+        SET delete_flag = '1',
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND delete_flag = '0'
+    </update>
+
+    <!-- 获取任务统计信息 -->
+    <select id="getTaskStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as totalTasks,
+            COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pendingTasks,
+            COUNT(CASE WHEN status = 'IN_PROGRESS' THEN 1 END) as inProgressTasks,
+            COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completedTasks,
+            COUNT(CASE WHEN status = 'CANCELLED' THEN 1 END) as cancelledTasks,
+            COUNT(CASE WHEN priority = 'URGENT' THEN 1 END) as urgentTasks,
+            COUNT(CASE WHEN priority = 'HIGH' THEN 1 END) as highPriorityTasks,
+            SUM(quantity) as totalQuantity,
+            SUM(CASE WHEN status = 'COMPLETED' THEN quantity ELSE 0 END) as completedQuantity,
+            SUM(labor_cost_amount) as totalAmount,
+            SUM(salary_amount) as totalSalary,
+            AVG(CASE 
+                WHEN status = 'COMPLETED' AND actual_start_time IS NOT NULL AND actual_end_time IS NOT NULL 
+                THEN TIMESTAMPDIFF(HOUR, actual_start_time, actual_end_time) 
+                ELSE NULL 
+            END) as avgProcessingTime,
+            AVG(CASE WHEN quality_score IS NOT NULL THEN quality_score ELSE NULL END) as avgQualityScore
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+    </select>
+
+    <!-- 根据状态统计任务数量 -->
+    <select id="getStatusStatistics" resultType="java.util.Map">
+        SELECT 
+            status,
+            COUNT(*) as count,
+            SUM(quantity) as totalQuantity,
+            SUM(labor_cost_amount) as totalAmount
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        GROUP BY status
+        ORDER BY count DESC
+    </select>
+
+    <!-- 根据任务类型统计任务数量 -->
+    <select id="getTaskTypeStatistics" resultType="java.util.Map">
+        SELECT 
+            task_type as taskType,
+            COUNT(*) as count,
+            SUM(quantity) as totalQuantity,
+            AVG(quality_score) as avgQualityScore
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        GROUP BY task_type
+        ORDER BY count DESC
+    </select>
+
+    <!-- 根据优先级统计任务数量 -->
+    <select id="getPriorityStatistics" resultType="java.util.Map">
+        SELECT 
+            priority,
+            COUNT(*) as count,
+            SUM(quantity) as totalQuantity
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        GROUP BY priority
+        ORDER BY 
+            CASE priority
+                WHEN 'URGENT' THEN 1
+                WHEN 'HIGH' THEN 2
+                WHEN 'MEDIUM' THEN 3
+                WHEN 'LOW' THEN 4
+                ELSE 5
+            END
+    </select>
+
+    <!-- 根据工人统计任务数量 -->
+    <select id="getWorkerStatistics" resultType="java.util.Map">
+        SELECT
+            worker_id as workerId,
+            worker_name as workerName,
+            COUNT(*) as count,
+            SUM(quantity) as totalQuantity,
+            SUM(salary_amount) as totalSalary,
+            AVG(quality_score) as avgQualityScore
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND worker_id IS NOT NULL
+        GROUP BY worker_id, worker_name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 查询任务处理时间排行 -->
+    <select id="getProcessingTimeRanking" resultType="java.util.Map">
+        SELECT
+            id,
+            task_number as taskNumber,
+            product_name as productName,
+            task_type as taskType,
+            worker_name as workerName,
+            actual_start_time as actualStartTime,
+            actual_end_time as actualEndTime,
+            TIMESTAMPDIFF(HOUR, actual_start_time, actual_end_time) as processingTime
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'COMPLETED'
+          AND actual_start_time IS NOT NULL
+          AND actual_end_time IS NOT NULL
+        ORDER BY processingTime DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询工人效率排行 -->
+    <select id="getWorkerEfficiencyRanking" resultType="java.util.Map">
+        SELECT
+            worker_id as workerId,
+            worker_name as workerName,
+            COUNT(*) as completedCount,
+            AVG(TIMESTAMPDIFF(HOUR, actual_start_time, actual_end_time)) as avgProcessingTime,
+            AVG(quality_score) as avgQualityScore,
+            SUM(quantity) as totalQuantity
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'COMPLETED'
+          AND worker_id IS NOT NULL
+          AND actual_start_time IS NOT NULL
+          AND actual_end_time IS NOT NULL
+        GROUP BY worker_id, worker_name
+        ORDER BY avgProcessingTime ASC, avgQualityScore DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询质量排行 -->
+    <select id="getQualityRanking" resultType="java.util.Map">
+        SELECT
+            id,
+            task_number as taskNumber,
+            product_name as productName,
+            task_type as taskType,
+            worker_name as workerName,
+            quality_grade as qualityGrade,
+            quality_score as qualityScore
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND quality_score IS NOT NULL
+        ORDER BY quality_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询月度任务趋势 -->
+    <select id="getMonthlyTrend" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(create_time, '%Y-%m') as month,
+            COUNT(*) as count,
+            SUM(quantity) as totalQuantity,
+            SUM(labor_cost_amount) as totalAmount,
+            COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completedCount
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND create_time >= DATE_SUB(NOW(), INTERVAL #{months} MONTH)
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m')
+        ORDER BY month DESC
+    </select>
+
+    <!-- 查询任务详细信息（包含关联数据） -->
+    <select id="getTaskDetail" resultType="java.util.Map">
+        SELECT
+            pt.*,
+            w.specialty as workerSpecialty,
+            w.skill_level as workerSkillLevel,
+            w.efficiency_rating as workerEfficiencyRating,
+            p.model as productModel,
+            p.category_id as productCategoryId
+        FROM jsh_post_processing_task pt
+        LEFT JOIN jsh_production_worker w ON pt.worker_id = w.id AND w.delete_flag = '0'
+        LEFT JOIN jsh_material p ON pt.product_id = p.id AND p.delete_flag = '0'
+        WHERE pt.id = #{id}
+          AND pt.tenant_id = #{tenantId}
+          AND pt.delete_flag = '0'
+    </select>
+
+    <!-- 查询待分配的任务 -->
+    <select id="getPendingAssignmentTasks" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'PENDING'
+          AND worker_id IS NULL
+        ORDER BY priority, plan_start_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询进行中的任务 -->
+    <select id="getInProgressTasks" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status = 'IN_PROGRESS'
+        ORDER BY priority, actual_start_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询超期任务 -->
+    <select id="getOverdueTasks" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status IN ('PENDING', 'IN_PROGRESS')
+          AND plan_end_time &lt; NOW()
+        ORDER BY priority, plan_end_time ASC
+    </select>
+
+    <!-- 查询高优先级任务 -->
+    <select id="getHighPriorityTasks" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status IN ('PENDING', 'IN_PROGRESS')
+          AND priority IN ('URGENT', 'HIGH')
+        ORDER BY
+            CASE priority
+                WHEN 'URGENT' THEN 1
+                WHEN 'HIGH' THEN 2
+                ELSE 3
+            END,
+            plan_start_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 推荐合适的工人 -->
+    <select id="recommendWorkers" resultType="java.util.Map">
+        SELECT
+            w.id as workerId,
+            w.worker_name as workerName,
+            w.specialty,
+            w.skill_level as skillLevel,
+            w.efficiency_rating as efficiencyRating,
+            w.quality_rating as qualityRating,
+            w.current_workload as currentWorkload,
+            w.max_workload as maxWorkload,
+            COALESCE(pt_stats.completed_count, 0) as completedCount,
+            COALESCE(pt_stats.avg_quality_score, 0) as avgQualityScore
+        FROM jsh_production_worker w
+        LEFT JOIN (
+            SELECT
+                worker_id,
+                COUNT(*) as completed_count,
+                AVG(quality_score) as avg_quality_score
+            FROM jsh_post_processing_task
+            WHERE tenant_id = #{tenantId}
+              AND delete_flag = '0'
+              AND status = 'COMPLETED'
+              AND task_type = #{taskType}
+            GROUP BY worker_id
+        ) pt_stats ON w.id = pt_stats.worker_id
+        WHERE w.tenant_id = #{tenantId}
+          AND w.delete_flag = '0'
+          AND w.status = 'ACTIVE'
+          AND w.availability_status = 'AVAILABLE'
+          AND w.current_workload &lt; w.max_workload
+          AND (w.specialty LIKE CONCAT('%', #{taskType}, '%') OR w.specialty LIKE '%后工%')
+        ORDER BY
+            CASE w.skill_level
+                WHEN 'EXPERT' THEN 1
+                WHEN 'SENIOR' THEN 2
+                WHEN 'INTERMEDIATE' THEN 3
+                WHEN 'JUNIOR' THEN 4
+                ELSE 5
+            END,
+            w.efficiency_rating DESC,
+            w.quality_rating DESC,
+            pt_stats.avg_quality_score DESC,
+            w.current_workload ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询工人当前任务负荷 -->
+    <select id="getWorkerTaskLoad" resultType="java.util.Map">
+        SELECT
+            worker_id as workerId,
+            worker_name as workerName,
+            COUNT(*) as currentTasks,
+            SUM(quantity) as totalQuantity,
+            COUNT(CASE WHEN priority = 'URGENT' THEN 1 END) as urgentTasks,
+            COUNT(CASE WHEN priority = 'HIGH' THEN 1 END) as highPriorityTasks
+        FROM jsh_post_processing_task
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND status IN ('PENDING', 'IN_PROGRESS')
+          AND worker_id IS NOT NULL
+        GROUP BY worker_id, worker_name
+        ORDER BY currentTasks DESC
+    </select>
+
+</mapper>

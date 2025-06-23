@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jsh.erp.datasource.mappers.ProductionTaskMapperEx">
+    
+    <!-- 扩展结果映射 -->
+    <resultMap id="TaskExResultMap" type="com.jsh.erp.datasource.entities.ProductionTaskEx">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="task_number" jdbcType="VARCHAR" property="taskNumber" />
+        <result column="task_name" jdbcType="VARCHAR" property="taskName" />
+        <result column="work_order_id" jdbcType="BIGINT" property="workOrderId" />
+        <result column="work_order_number" jdbcType="VARCHAR" property="workOrderNumber" />
+        <result column="task_type" jdbcType="VARCHAR" property="taskType" />
+        <result column="process_step" jdbcType="VARCHAR" property="processStep" />
+        <result column="product_id" jdbcType="BIGINT" property="productId" />
+        <result column="product_name" jdbcType="VARCHAR" property="productName" />
+        <result column="task_quantity" jdbcType="DECIMAL" property="taskQuantity" />
+        <result column="completed_quantity" jdbcType="DECIMAL" property="completedQuantity" />
+        <result column="qualified_quantity" jdbcType="DECIMAL" property="qualifiedQuantity" />
+        <result column="defective_quantity" jdbcType="DECIMAL" property="defectiveQuantity" />
+        <result column="unit_id" jdbcType="BIGINT" property="unitId" />
+        <result column="unit_name" jdbcType="VARCHAR" property="unitName" />
+        <result column="priority" jdbcType="VARCHAR" property="priority" />
+        <result column="status" jdbcType="VARCHAR" property="status" />
+        <result column="worker_id" jdbcType="BIGINT" property="workerId" />
+        <result column="worker_name" jdbcType="VARCHAR" property="workerName" />
+        <result column="worker_specialty" jdbcType="VARCHAR" property="workerSpecialty" />
+        <result column="assign_time" jdbcType="TIMESTAMP" property="assignTime" />
+        <result column="start_time" jdbcType="TIMESTAMP" property="startTime" />
+        <result column="complete_time" jdbcType="TIMESTAMP" property="completeTime" />
+        <result column="plan_start_time" jdbcType="TIMESTAMP" property="planStartTime" />
+        <result column="plan_end_time" jdbcType="TIMESTAMP" property="planEndTime" />
+        <result column="estimated_hours" jdbcType="DECIMAL" property="estimatedHours" />
+        <result column="actual_hours" jdbcType="DECIMAL" property="actualHours" />
+        <result column="unit_fee" jdbcType="DECIMAL" property="unitFee" />
+        <result column="total_fee" jdbcType="DECIMAL" property="totalFee" />
+        <result column="quality_level" jdbcType="VARCHAR" property="qualityLevel" />
+        <result column="quality_score" jdbcType="DECIMAL" property="qualityScore" />
+        <result column="remark" jdbcType="VARCHAR" property="remark" />
+        <result column="tenant_id" jdbcType="BIGINT" property="tenantId" />
+        <result column="delete_flag" jdbcType="VARCHAR" property="deleteFlag" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="create_user" jdbcType="BIGINT" property="createUser" />
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+        <result column="update_user" jdbcType="BIGINT" property="updateUser" />
+        
+        <!-- 扩展字段 -->
+        <result column="work_order_name" jdbcType="VARCHAR" property="workOrderName" />
+        <result column="work_order_status" jdbcType="VARCHAR" property="workOrderStatus" />
+        <result column="work_order_priority" jdbcType="VARCHAR" property="workOrderPriority" />
+        <result column="material_name" jdbcType="VARCHAR" property="materialName" />
+        <result column="material_model" jdbcType="VARCHAR" property="materialModel" />
+        <result column="material_standard" jdbcType="VARCHAR" property="materialStandard" />
+        <result column="category_name" jdbcType="VARCHAR" property="categoryName" />
+        <result column="worker_login_name" jdbcType="VARCHAR" property="workerLoginName" />
+        <result column="worker_position" jdbcType="VARCHAR" property="workerPosition" />
+        <result column="worker_department" jdbcType="VARCHAR" property="workerDepartment" />
+        <result column="worker_phone" jdbcType="VARCHAR" property="workerPhone" />
+        <result column="skill_level" jdbcType="VARCHAR" property="skillLevel" />
+        <result column="skill_score" jdbcType="DECIMAL" property="skillScore" />
+        <result column="efficiency_rate" jdbcType="DECIMAL" property="efficiencyRate" />
+        <result column="worker_quality_rate" jdbcType="DECIMAL" property="workerQualityRate" />
+        <result column="completion_rate" jdbcType="DECIMAL" property="completionRate" />
+        <result column="qualification_rate" jdbcType="DECIMAL" property="qualificationRate" />
+        <result column="progress_rate" jdbcType="DECIMAL" property="progressRate" />
+        <result column="create_user_name" jdbcType="VARCHAR" property="createUserName" />
+        <result column="update_user_name" jdbcType="VARCHAR" property="updateUserName" />
+        <result column="report_count" jdbcType="INTEGER" property="reportCount" />
+        <result column="quality_check_count" jdbcType="INTEGER" property="qualityCheckCount" />
+        <result column="total_reported_hours" jdbcType="DECIMAL" property="totalReportedHours" />
+        <result column="average_quality_score" jdbcType="DECIMAL" property="averageQualityScore" />
+        <result column="is_overdue" jdbcType="BOOLEAN" property="isOverdue" />
+        <result column="overdue_days" jdbcType="INTEGER" property="overdueDays" />
+    </resultMap>
+
+    <!-- 根据条件查询生产任务列表 -->
+    <select id="selectByConditionTask" resultMap="TaskExResultMap">
+        SELECT 
+            pt.*,
+            wo.work_order_name,
+            wo.status AS work_order_status,
+            wo.priority AS work_order_priority,
+            m.name AS material_name,
+            m.model AS material_model,
+            m.standard AS material_standard,
+            mc.name AS category_name,
+            u.login_name AS worker_login_name,
+            u.position AS worker_position,
+            u.department AS worker_department,
+            u.phonenum AS worker_phone,
+            ws.skill_level,
+            ws.skill_score,
+            ws.efficiency_rate,
+            ws.quality_rate AS worker_quality_rate,
+            CASE 
+                WHEN pt.task_quantity > 0 THEN ROUND((pt.completed_quantity / pt.task_quantity) * 100, 2)
+                ELSE 0 
+            END AS completion_rate,
+            CASE 
+                WHEN pt.completed_quantity > 0 THEN ROUND((pt.qualified_quantity / pt.completed_quantity) * 100, 2)
+                ELSE 0 
+            END AS qualification_rate,
+            cu.username AS create_user_name,
+            uu.username AS update_user_name,
+            IFNULL(report_stats.report_count, 0) AS report_count,
+            IFNULL(report_stats.total_reported_hours, 0) AS total_reported_hours,
+            IFNULL(qi_stats.quality_check_count, 0) AS quality_check_count,
+            IFNULL(qi_stats.average_quality_score, 0) AS average_quality_score,
+            CASE 
+                WHEN pt.plan_end_time IS NOT NULL AND pt.plan_end_time &lt; NOW() AND pt.status NOT IN ('COMPLETED', 'QUALITY_CHECKED') 
+                THEN 1 ELSE 0 
+            END AS is_overdue,
+            CASE 
+                WHEN pt.plan_end_time IS NOT NULL AND pt.plan_end_time &lt; NOW() 
+                THEN DATEDIFF(NOW(), pt.plan_end_time) ELSE 0 
+            END AS overdue_days
+        FROM jsh_production_task pt
+        LEFT JOIN jsh_production_work_order wo ON pt.work_order_id = wo.id AND IFNULL(wo.delete_flag, '0') != '1'
+        LEFT JOIN jsh_material m ON pt.product_id = m.id AND IFNULL(m.delete_flag, '0') != '1'
+        LEFT JOIN jsh_material_category mc ON m.category_id = mc.id AND IFNULL(mc.delete_flag, '0') != '1'
+        LEFT JOIN jsh_user u ON pt.worker_id = u.id AND IFNULL(u.delete_flag, '0') != '1'
+        LEFT JOIN jsh_worker_skill ws ON pt.worker_id = ws.worker_id AND ws.skill_type = pt.task_type AND IFNULL(ws.delete_flag, '0') != '1'
+        LEFT JOIN jsh_user cu ON pt.create_user = cu.id AND IFNULL(cu.delete_flag, '0') != '1'
+        LEFT JOIN jsh_user uu ON pt.update_user = uu.id AND IFNULL(uu.delete_flag, '0') != '1'
+        LEFT JOIN (
+            SELECT 
+                task_id,
+                COUNT(*) AS report_count,
+                SUM(work_hours) AS total_reported_hours
+            FROM jsh_production_report 
+            WHERE IFNULL(delete_flag, '0') != '1'
+            GROUP BY task_id
+        ) report_stats ON pt.id = report_stats.task_id
+        LEFT JOIN (
+            SELECT 
+                task_id,
+                COUNT(*) AS quality_check_count,
+                AVG(overall_score) AS average_quality_score
+            FROM jsh_quality_inspection 
+            WHERE IFNULL(delete_flag, '0') != '1'
+            GROUP BY task_id
+        ) qi_stats ON pt.id = qi_stats.task_id
+        WHERE 1=1
+        AND IFNULL(pt.delete_flag, '0') != '1'
+        <if test="taskNumber != null and taskNumber != ''">
+            <bind name="bindTaskNumber" value="'%' + taskNumber + '%'"/>
+            AND pt.task_number LIKE #{bindTaskNumber}
+        </if>
+        <if test="taskName != null and taskName != ''">
+            <bind name="bindTaskName" value="'%' + taskName + '%'"/>
+            AND pt.task_name LIKE #{bindTaskName}
+        </if>
+        <if test="workOrderNumber != null and workOrderNumber != ''">
+            <bind name="bindWorkOrderNumber" value="'%' + workOrderNumber + '%'"/>
+            AND pt.work_order_number LIKE #{bindWorkOrderNumber}
+        </if>
+        <if test="taskType != null and taskType != ''">
+            AND pt.task_type = #{taskType}
+        </if>
+        <if test="processStep != null and processStep != ''">
+            <bind name="bindProcessStep" value="'%' + processStep + '%'"/>
+            AND pt.process_step LIKE #{bindProcessStep}
+        </if>
+        <if test="productName != null and productName != ''">
+            <bind name="bindProductName" value="'%' + productName + '%'"/>
+            AND (pt.product_name LIKE #{bindProductName} OR m.name LIKE #{bindProductName})
+        </if>
+        <if test="priority != null and priority != ''">
+            AND pt.priority = #{priority}
+        </if>
+        <if test="status != null and status != ''">
+            AND pt.status = #{status}
+        </if>
+        <if test="workerName != null and workerName != ''">
+            <bind name="bindWorkerName" value="'%' + workerName + '%'"/>
+            AND pt.worker_name LIKE #{bindWorkerName}
+        </if>
+        <if test="workerSpecialty != null and workerSpecialty != ''">
+            <bind name="bindWorkerSpecialty" value="'%' + workerSpecialty + '%'"/>
+            AND pt.worker_specialty LIKE #{bindWorkerSpecialty}
+        </if>
+        <if test="assignTime != null">
+            AND pt.assign_time >= #{assignTime}
+        </if>
+        <if test="planStartTime != null">
+            AND pt.plan_start_time >= #{planStartTime}
+        </if>
+        <if test="planEndTime != null">
+            AND pt.plan_end_time &lt;= #{planEndTime}
+        </if>
+        <if test="tenantId != null">
+            AND pt.tenant_id = #{tenantId}
+        </if>
+        ORDER BY pt.create_time DESC
+        <if test="offset != null and rows != null">
+            LIMIT #{offset}, #{rows}
+        </if>
+    </select>
+
+    <!-- 根据条件统计生产任务数量 -->
+    <select id="countByConditionTask" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM jsh_production_task pt
+        LEFT JOIN jsh_material m ON pt.product_id = m.id AND IFNULL(m.delete_flag, '0') != '1'
+        WHERE 1=1
+        AND IFNULL(pt.delete_flag, '0') != '1'
+        <if test="taskNumber != null and taskNumber != ''">
+            <bind name="bindTaskNumber" value="'%' + taskNumber + '%'"/>
+            AND pt.task_number LIKE #{bindTaskNumber}
+        </if>
+        <if test="taskName != null and taskName != ''">
+            <bind name="bindTaskName" value="'%' + taskName + '%'"/>
+            AND pt.task_name LIKE #{bindTaskName}
+        </if>
+        <if test="workOrderNumber != null and workOrderNumber != ''">
+            <bind name="bindWorkOrderNumber" value="'%' + workOrderNumber + '%'"/>
+            AND pt.work_order_number LIKE #{bindWorkOrderNumber}
+        </if>
+        <if test="taskType != null and taskType != ''">
+            AND pt.task_type = #{taskType}
+        </if>
+        <if test="processStep != null and processStep != ''">
+            <bind name="bindProcessStep" value="'%' + processStep + '%'"/>
+            AND pt.process_step LIKE #{bindProcessStep}
+        </if>
+        <if test="productName != null and productName != ''">
+            <bind name="bindProductName" value="'%' + productName + '%'"/>
+            AND (pt.product_name LIKE #{bindProductName} OR m.name LIKE #{bindProductName})
+        </if>
+        <if test="priority != null and priority != ''">
+            AND pt.priority = #{priority}
+        </if>
+        <if test="status != null and status != ''">
+            AND pt.status = #{status}
+        </if>
+        <if test="workerName != null and workerName != ''">
+            <bind name="bindWorkerName" value="'%' + workerName + '%'"/>
+            AND pt.worker_name LIKE #{bindWorkerName}
+        </if>
+        <if test="workerSpecialty != null and workerSpecialty != ''">
+            <bind name="bindWorkerSpecialty" value="'%' + workerSpecialty + '%'"/>
+            AND pt.worker_specialty LIKE #{bindWorkerSpecialty}
+        </if>
+        <if test="assignTime != null">
+            AND pt.assign_time >= #{assignTime}
+        </if>
+        <if test="planStartTime != null">
+            AND pt.plan_start_time >= #{planStartTime}
+        </if>
+        <if test="planEndTime != null">
+            AND pt.plan_end_time &lt;= #{planEndTime}
+        </if>
+        <if test="tenantId != null">
+            AND pt.tenant_id = #{tenantId}
+        </if>
+    </select>
+
+    <!-- 根据ID查询任务详情 -->
+    <select id="findById" resultMap="TaskExResultMap">
+        SELECT 
+            pt.*,
+            wo.work_order_name,
+            wo.status AS work_order_status,
+            wo.priority AS work_order_priority,
+            m.name AS material_name,
+            m.model AS material_model,
+            m.standard AS material_standard,
+            mc.name AS category_name,
+            u.login_name AS worker_login_name,
+            u.position AS worker_position,
+            u.department AS worker_department,
+            u.phonenum AS worker_phone,
+            ws.skill_level,
+            ws.skill_score,
+            ws.efficiency_rate,
+            ws.quality_rate AS worker_quality_rate,
+            cu.username AS create_user_name,
+            uu.username AS update_user_name
+        FROM jsh_production_task pt
+        LEFT JOIN jsh_production_work_order wo ON pt.work_order_id = wo.id AND IFNULL(wo.delete_flag, '0') != '1'
+        LEFT JOIN jsh_material m ON pt.product_id = m.id AND IFNULL(m.delete_flag, '0') != '1'
+        LEFT JOIN jsh_material_category mc ON m.category_id = mc.id AND IFNULL(mc.delete_flag, '0') != '1'
+        LEFT JOIN jsh_user u ON pt.worker_id = u.id AND IFNULL(u.delete_flag, '0') != '1'
+        LEFT JOIN jsh_worker_skill ws ON pt.worker_id = ws.worker_id AND ws.skill_type = pt.task_type AND IFNULL(ws.delete_flag, '0') != '1'
+        LEFT JOIN jsh_user cu ON pt.create_user = cu.id AND IFNULL(cu.delete_flag, '0') != '1'
+        LEFT JOIN jsh_user uu ON pt.update_user = uu.id AND IFNULL(uu.delete_flag, '0') != '1'
+        WHERE pt.id = #{id}
+        AND IFNULL(pt.delete_flag, '0') != '1'
+    </select>
+
+    <!-- 根据任务编号查询任务 -->
+    <select id="findByTaskNumber" resultType="com.jsh.erp.datasource.entities.ProductionTask">
+        SELECT * FROM jsh_production_task
+        WHERE task_number = #{taskNumber}
+        AND tenant_id = #{tenantId}
+        AND IFNULL(delete_flag, '0') != '1'
+    </select>
+
+    <!-- 根据工单ID查询任务列表 -->
+    <select id="getTaskListByWorkOrderId" resultMap="TaskExResultMap">
+        SELECT 
+            pt.*,
+            m.name AS material_name,
+            u.username AS worker_login_name,
+            ws.skill_level,
+            ws.skill_score
+        FROM jsh_production_task pt
+        LEFT JOIN jsh_material m ON pt.product_id = m.id AND IFNULL(m.delete_flag, '0') != '1'
+        LEFT JOIN jsh_user u ON pt.worker_id = u.id AND IFNULL(u.delete_flag, '0') != '1'
+        LEFT JOIN jsh_worker_skill ws ON pt.worker_id = ws.worker_id AND ws.skill_type = pt.task_type AND IFNULL(ws.delete_flag, '0') != '1'
+        WHERE pt.work_order_id = #{workOrderId}
+        AND IFNULL(pt.delete_flag, '0') != '1'
+        ORDER BY pt.create_time ASC
+    </select>
+
+    <!-- 根据工人ID查询任务列表 -->
+    <select id="getTaskListByWorkerId" resultMap="TaskExResultMap">
+        SELECT 
+            pt.*,
+            wo.work_order_name,
+            m.name AS material_name
+        FROM jsh_production_task pt
+        LEFT JOIN jsh_production_work_order wo ON pt.work_order_id = wo.id AND IFNULL(wo.delete_flag, '0') != '1'
+        LEFT JOIN jsh_material m ON pt.product_id = m.id AND IFNULL(m.delete_flag, '0') != '1'
+        WHERE pt.worker_id = #{workerId}
+        AND IFNULL(pt.delete_flag, '0') != '1'
+        <if test="status != null and status != ''">
+            AND pt.status = #{status}
+        </if>
+        ORDER BY pt.plan_start_time ASC
+    </select>
+
+    <!-- 批量删除生产任务 -->
+    <update id="batchDeleteTaskByIds">
+        UPDATE jsh_production_task
+        SET delete_flag = '1',
+            update_time = #{updateTime},
+            update_user = #{updater}
+        WHERE id IN
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 更新任务状态 -->
+    <update id="updateTaskStatus">
+        UPDATE jsh_production_task
+        SET status = #{status},
+            update_time = #{updateTime},
+            update_user = #{updateUser}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 分配任务给工人 -->
+    <update id="assignTaskToWorker">
+        UPDATE jsh_production_task
+        SET worker_id = #{workerId},
+            worker_name = #{workerName},
+            assign_time = #{assignTime},
+            status = 'ASSIGNED',
+            update_time = #{updateTime},
+            update_user = #{updateUser}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 开始任务 -->
+    <update id="startTask">
+        UPDATE jsh_production_task
+        SET start_time = #{startTime},
+            status = 'IN_PROGRESS',
+            update_time = #{updateTime},
+            update_user = #{updateUser}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 完成任务 -->
+    <update id="completeTask">
+        UPDATE jsh_production_task
+        SET complete_time = #{completeTime},
+            completed_quantity = #{completedQuantity},
+            qualified_quantity = #{qualifiedQuantity},
+            defective_quantity = #{defectiveQuantity},
+            actual_hours = #{actualHours},
+            status = 'COMPLETED',
+            update_time = #{updateTime},
+            update_user = #{updateUser}
+        WHERE id = #{id}
+        AND IFNULL(delete_flag, '0') != '1'
+    </update>
+
+    <!-- 检查任务编号是否存在 -->
+    <select id="checkTaskNumberExist" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM jsh_production_task
+        WHERE task_number = #{taskNumber}
+        AND tenant_id = #{tenantId}
+        AND IFNULL(delete_flag, '0') != '1'
+        <if test="id != null">
+            AND id != #{id}
+        </if>
+    </select>
+
+</mapper>

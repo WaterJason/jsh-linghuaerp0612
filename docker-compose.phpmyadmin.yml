@@ -1,0 +1,81 @@
+# jshERP phpMyAdmin Docker配置
+# 用于管理jshERP数据库
+
+version: '3.8'
+
+services:
+  # phpMyAdmin 数据库管理工具
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: jsherp-phpmyadmin
+    environment:
+      # 连接到现有的MySQL容器
+      PMA_HOST: jsherp-mysql-dev
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: 123456
+      # 允许任意服务器连接
+      PMA_ARBITRARY: 1
+      # 上传文件大小限制
+      UPLOAD_LIMIT: 100M
+      # 内存限制
+      MEMORY_LIMIT: 512M
+      # 最大执行时间
+      MAX_EXECUTION_TIME: 600
+      # 时区设置
+      TZ: Asia/Shanghai
+    ports:
+      # 映射到本地8081端口，避免与其他服务冲突
+      - "8081:80"
+    volumes:
+      # 挂载自定义配置（可选）
+      - ./docker/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
+    networks:
+      # 连接到jshERP的网络
+      - jsherp_network_dev
+    depends_on:
+      # 依赖MySQL服务
+      - jsherp-mysql-dev
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
+
+  # 如果MySQL容器没有运行，这里重新定义（通常不需要）
+  jsherp-mysql-dev:
+    image: mysql:5.7.33
+    container_name: jsherp-mysql-dev
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: jsh_erp
+      MYSQL_USER: jsh_user
+      MYSQL_PASSWORD: 123456
+      TZ: Asia/Shanghai
+    command: [
+      '--character-set-server=utf8mb4',
+      '--collation-server=utf8mb4_unicode_ci',
+      '--default-time-zone=+08:00',
+      '--max_connections=200',
+      '--innodb_buffer_pool_size=256M',
+      '--sql_mode=STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+    ]
+    ports:
+      - "3306:3306"
+    volumes:
+      - jsherp_mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+      - ./docker/mysql/conf:/etc/mysql/conf.d
+    networks:
+      - jsherp_network_dev
+    restart: unless-stopped
+
+# 网络配置
+networks:
+  jsherp_network_dev:
+    name: jsherp_network_dev
+    external: true
+
+# 数据卷配置
+volumes:
+  jsherp_mysql_data:
+    name: jsherp_mysql_data
+    external: false

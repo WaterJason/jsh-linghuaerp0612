@@ -11,7 +11,7 @@
   />
 </template>
 <script>
-  import moment from 'moment'
+  import dayjs from 'dayjs'
   export default {
     name: 'JDate',
     props: {
@@ -59,7 +59,7 @@
       let dateStr = this.value;
       return {
         decorator:"",
-        momVal:!dateStr?null:moment(dateStr,this.dateFormat)
+        momVal:!dateStr?null:dayjs(dateStr)
       }
     },
     watch: {
@@ -67,12 +67,12 @@
         if(!val){
           this.momVal = null
         }else{
-          this.momVal = moment(val,this.dateFormat)
+          this.momVal = dayjs(val)
         }
       }
     },
     methods: {
-      moment,
+      dayjs,
       handleDateChange(mom,dateStr){
         this.$emit('change', dateStr);
       }

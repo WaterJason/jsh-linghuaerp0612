@@ -1,236 +1,267 @@
 <template>
   <a-modal
-    :title="title"
-    :width="800"
+    title="生产订单管理"
     :visible="visible"
+    :width="900"
     :confirmLoading="confirmLoading"
     @ok="handleOk"
     @cancel="handleCancel"
-    cancelText="关闭"
+    :maskClosable="false"
   >
-    <a-spin :spinning="confirmLoading">
-      <a-form :form="form" layout="vertical">
-        <a-row :gutter="24">
-          <a-col :span="12">
-            <a-form-item label="订单号">
-              <a-input
-                v-decorator="['orderNo', { rules: [{ required: true, message: '请输入订单号!' }] }]"
-                placeholder="请输入订单号"
-                :disabled="!!model.id"
-              />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="销售订单ID">
-              <a-input-number
-                v-decorator="['salesOrderId']"
-                placeholder="请输入销售订单ID"
-                style="width: 100%"
-              />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        
-        <a-row :gutter="24">
-          <a-col :span="12">
-            <a-form-item label="产品ID">
-              <a-input-number
-                v-decorator="['materialId', { rules: [{ required: true, message: '请输入产品ID!' }] }]"
-                placeholder="请输入产品ID"
-                style="width: 100%"
-              />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="数量">
-              <a-input-number
-                v-decorator="['quantity', { rules: [{ required: true, message: '请输入数量!' }] }]"
-                placeholder="请输入数量"
-                :min="0"
-                :precision="2"
-                style="width: 100%"
-              />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        
-        <a-row :gutter="24">
-          <a-col :span="12">
-            <a-form-item label="状态">
-              <a-select
-                v-decorator="['status', { initialValue: 'PENDING' }]"
-                placeholder="请选择状态"
-              >
-                <a-select-option value="PENDING">待开始</a-select-option>
-                <a-select-option value="IN_PROGRESS">进行中</a-select-option>
-                <a-select-option value="COMPLETED">已完成</a-select-option>
-                <a-select-option value="CANCELLED">已取消</a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="交付期限">
-              <a-date-picker
-                v-decorator="['deliveryDate']"
-                placeholder="请选择交付期限"
-                style="width: 100%"
-                show-time
-                format="YYYY-MM-DD HH:mm:ss"
-              />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        
-        <a-row :gutter="24">
-          <a-col :span="8">
-            <a-form-item label="总成本">
-              <a-input-number
-                v-decorator="['totalCost']"
-                placeholder="请输入总成本"
-                :min="0"
-                :precision="2"
-                style="width: 100%"
-              />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item label="物料成本">
-              <a-input-number
-                v-decorator="['materialCost']"
-                placeholder="请输入物料成本"
-                :min="0"
-                :precision="2"
-                style="width: 100%"
-              />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item label="人工成本">
-              <a-input-number
-                v-decorator="['laborCost']"
-                placeholder="请输入人工成本"
-                :min="0"
-                :precision="2"
-                style="width: 100%"
-              />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        
-        <a-form-item label="备注">
-          <a-textarea
-            v-decorator="['remark']"
-            placeholder="请输入备注"
-            :rows="4"
-          />
-        </a-form-item>
-      </a-form>
-    </a-spin>
+    <a-form-model
+      ref="form"
+      :model="form"
+      :rules="rules"
+      :label-col="{ span: 6 }"
+      :wrapper-col="{ span: 16 }"
+    >
+      <a-row :gutter="16">
+        <a-col :span="12">
+          <a-form-model-item label="订单编号" prop="orderNo">
+            <a-input v-model="form.orderNo" placeholder="请输入订单编号" />
+          </a-form-model-item>
+        </a-col>
+        <a-col :span="12">
+          <a-form-model-item label="产品名称" prop="productName">
+            <a-input v-model="form.productName" placeholder="请输入产品名称" />
+          </a-form-model-item>
+        </a-col>
+      </a-row>
+      
+      <a-row :gutter="16">
+        <a-col :span="12">
+          <a-form-model-item label="产品类型" prop="productType">
+            <a-select v-model="form.productType" placeholder="请选择产品类型">
+              <a-select-option value="cloisonne">掐丝珐琅</a-select-option>
+              <a-select-option value="ceramic">陶瓷</a-select-option>
+              <a-select-option value="metal">金属工艺</a-select-option>
+              <a-select-option value="other">其他</a-select-option>
+            </a-select>
+          </a-form-model-item>
+        </a-col>
+        <a-col :span="12">
+          <a-form-model-item label="生产数量" prop="quantity">
+            <a-input-number
+              v-model="form.quantity"
+              :min="1"
+              placeholder="请输入生产数量"
+              style="width: 100%"
+            />
+          </a-form-model-item>
+        </a-col>
+      </a-row>
+      
+      <a-row :gutter="16">
+        <a-col :span="12">
+          <a-form-model-item label="计划开始日期" prop="plannedStartDate">
+            <a-date-picker
+              v-model="form.plannedStartDate"
+              format="YYYY-MM-DD"
+              placeholder="请选择开始日期"
+              style="width: 100%"
+            />
+          </a-form-model-item>
+        </a-col>
+        <a-col :span="12">
+          <a-form-model-item label="计划完成日期" prop="plannedEndDate">
+            <a-date-picker
+              v-model="form.plannedEndDate"
+              format="YYYY-MM-DD"
+              placeholder="请选择完成日期"
+              style="width: 100%"
+            />
+          </a-form-model-item>
+        </a-col>
+      </a-row>
+      
+      <a-row :gutter="16">
+        <a-col :span="12">
+          <a-form-model-item label="负责人" prop="manager">
+            <a-select v-model="form.manager" placeholder="请选择负责人">
+              <a-select-option value="emp001">张三</a-select-option>
+              <a-select-option value="emp002">李四</a-select-option>
+              <a-select-option value="emp003">王五</a-select-option>
+            </a-select>
+          </a-form-model-item>
+        </a-col>
+        <a-col :span="12">
+          <a-form-model-item label="优先级" prop="priority">
+            <a-select v-model="form.priority" placeholder="请选择优先级">
+              <a-select-option value="high">高</a-select-option>
+              <a-select-option value="medium">中</a-select-option>
+              <a-select-option value="low">低</a-select-option>
+            </a-select>
+          </a-form-model-item>
+        </a-col>
+      </a-row>
+      
+      <a-row :gutter="16">
+        <a-col :span="12">
+          <a-form-model-item label="状态" prop="status">
+            <a-select v-model="form.status" placeholder="请选择状态">
+              <a-select-option value="pending">待开始</a-select-option>
+              <a-select-option value="in_progress">进行中</a-select-option>
+              <a-select-option value="completed">已完成</a-select-option>
+              <a-select-option value="cancelled">已取消</a-select-option>
+            </a-select>
+          </a-form-model-item>
+        </a-col>
+        <a-col :span="12">
+          <a-form-model-item label="预算成本" prop="budgetCost">
+            <a-input-number
+              v-model="form.budgetCost"
+              :min="0"
+              :precision="2"
+              placeholder="请输入预算成本"
+              style="width: 100%"
+            />
+          </a-form-model-item>
+        </a-col>
+      </a-row>
+      
+      <a-form-model-item label="产品规格" prop="specifications">
+        <a-textarea
+          v-model="form.specifications"
+          :rows="3"
+          placeholder="请输入产品规格说明"
+        />
+      </a-form-model-item>
+      
+      <a-form-model-item label="生产要求" prop="requirements">
+        <a-textarea
+          v-model="form.requirements"
+          :rows="3"
+          placeholder="请输入生产要求"
+        />
+      </a-form-model-item>
+      
+      <a-form-model-item label="备注" prop="remark">
+        <a-textarea
+          v-model="form.remark"
+          :rows="2"
+          placeholder="请输入备注信息"
+        />
+      </a-form-model-item>
+    </a-form-model>
   </a-modal>
 </template>
 
 <script>
-import { postAction, putAction } from '@/api/manage'
-
 export default {
   name: 'ProductionOrderModal',
-  data() {
-    return {
-      title: '',
-      visible: false,
-      model: {},
-      confirmLoading: false,
-      form: this.$form.createForm(this),
-      validatorRules: {}
+  props: {
+    visible: {
+      type: Boolean,
+      default: false
+    },
+    record: {
+      type: Object,
+      default: () => ({})
     }
   },
-  
+  data() {
+    return {
+      confirmLoading: false,
+      form: {
+        id: null,
+        orderNo: '',
+        productName: '',
+        productType: '',
+        quantity: 1,
+        plannedStartDate: null,
+        plannedEndDate: null,
+        manager: '',
+        priority: 'medium',
+        status: 'pending',
+        budgetCost: 0,
+        specifications: '',
+        requirements: '',
+        remark: ''
+      },
+      rules: {
+        orderNo: [
+          { required: true, message: '请输入订单编号', trigger: 'blur' }
+        ],
+        productName: [
+          { required: true, message: '请输入产品名称', trigger: 'blur' }
+        ],
+        productType: [
+          { required: true, message: '请选择产品类型', trigger: 'change' }
+        ],
+        quantity: [
+          { required: true, message: '请输入生产数量', trigger: 'blur' }
+        ],
+        plannedStartDate: [
+          { required: true, message: '请选择开始日期', trigger: 'change' }
+        ],
+        plannedEndDate: [
+          { required: true, message: '请选择完成日期', trigger: 'change' }
+        ],
+        manager: [
+          { required: true, message: '请选择负责人', trigger: 'change' }
+        ]
+      }
+    }
+  },
+  watch: {
+    visible(val) {
+      if (val) {
+        this.initForm()
+      }
+    }
+  },
   methods: {
-    add() {
-      this.edit({})
+    initForm() {
+      if (this.record && this.record.id) {
+        this.form = { ...this.record }
+      } else {
+        this.form = {
+          id: null,
+          orderNo: this.generateOrderNo(),
+          productName: '',
+          productType: '',
+          quantity: 1,
+          plannedStartDate: null,
+          plannedEndDate: null,
+          manager: '',
+          priority: 'medium',
+          status: 'pending',
+          budgetCost: 0,
+          specifications: '',
+          requirements: '',
+          remark: ''
+        }
+      }
     },
-    
-    edit(record) {
-      this.form.resetFields()
-      this.model = Object.assign({}, record)
-      this.visible = true
-      
-      this.$nextTick(() => {
-        this.form.setFieldsValue({
-          orderNo: this.model.orderNo,
-          salesOrderId: this.model.salesOrderId,
-          materialId: this.model.materialId,
-          quantity: this.model.quantity,
-          status: this.model.status || 'PENDING',
-          deliveryDate: this.model.deliveryDate ? this.$moment(this.model.deliveryDate) : null,
-          totalCost: this.model.totalCost,
-          materialCost: this.model.materialCost,
-          laborCost: this.model.laborCost,
-          remark: this.model.remark
-        })
-      })
+    generateOrderNo() {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+      return `PO${year}${month}${day}${random}`
     },
-    
-    detail(record) {
-      this.edit(record)
-      // 详情模式下禁用所有表单项
-      this.$nextTick(() => {
-        const formItems = this.$el.querySelectorAll('.ant-form-item input, .ant-form-item textarea, .ant-form-item .ant-select, .ant-form-item .ant-input-number')
-        formItems.forEach(item => {
-          item.disabled = true
-        })
-      })
-    },
-    
     handleOk() {
-      const that = this
-      this.form.validateFields((err, values) => {
-        if (!err) {
-          that.confirmLoading = true
-          
-          // 处理日期格式
-          if (values.deliveryDate) {
-            values.deliveryDate = values.deliveryDate.format('YYYY-MM-DD HH:mm:ss')
-          }
-          
-          let httpUrl = ''
-          let method = ''
-          
-          if (!this.model.id) {
-            httpUrl = '/production/add'
-            method = postAction
-          } else {
-            httpUrl = '/production/update'
-            method = putAction
-            values.id = this.model.id
-          }
-          
-          method(httpUrl, values).then(res => {
-            if (res.code === 200) {
-              that.$message.success('操作成功!')
-              that.$emit('ok')
-              that.handleCancel()
-            } else {
-              that.$message.error('操作失败：' + res.data.message)
-            }
-          }).catch(err => {
-            that.$message.error('操作失败')
-            console.error(err)
-          }).finally(() => {
-            that.confirmLoading = false
-          })
+      this.$refs.form.validate(valid => {
+        if (valid) {
+          this.confirmLoading = true
+          setTimeout(() => {
+            this.confirmLoading = false
+            this.$emit('ok', this.form)
+            this.$message.success('生产订单保存成功')
+          }, 1000)
         }
       })
     },
-    
     handleCancel() {
-      this.visible = false
-      this.form.resetFields()
-      this.model = {}
+      this.$emit('cancel')
     }
   }
 }
 </script>
 
 <style scoped>
+.ant-form-item {
+  margin-bottom: 16px;
+}
 </style>

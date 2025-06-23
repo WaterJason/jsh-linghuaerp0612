@@ -107,7 +107,9 @@ function generateChildRouters (data) {
     if(item.component.indexOf("layouts")>=0){
       componentPath = () => import('@/components'+item.component);
     } else {
-      componentPath = () => import('@/views'+item.component);
+      // 自动添加.vue扩展名
+      let componentFile = item.component.endsWith('.vue') ? item.component : item.component + '.vue';
+      componentPath = () => import('@/views'+componentFile);
     }
     // eslint-disable-next-line
     let URL = (item.url|| '').replace(/{{([^}}]+)?}}/g, (s1, s2) => eval(s2)) // URL支持{{ window.xxx }}占位符变量

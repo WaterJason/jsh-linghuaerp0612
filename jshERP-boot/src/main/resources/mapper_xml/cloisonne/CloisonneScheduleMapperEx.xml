@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jsh.erp.datasource.mappers.CloisonneScheduleMapperEx">
+
+    <!-- 查询排班列表 -->
+    <select id="selectScheduleList" resultType="com.jsh.erp.datasource.vo.CloisonneScheduleVo4List">
+        SELECT
+            cs.id,
+            cs.schedule_date,
+            cs.employee_id,
+            cs.employee_name,
+            u.position as employee_role,
+            u.phonenum as employee_phone,
+            cs.shift_type,
+            cs.start_time,
+            cs.end_time,
+            cs.work_hours,
+            cs.work_area,
+            cs.status,
+            cs.priority,
+            cs.notes,
+            cs.create_time,
+            cu.username as create_user_name
+        FROM jsh_cloisonne_schedule cs
+        LEFT JOIN jsh_user u ON cs.employee_id = u.id AND u.delete_flag = '0'
+        LEFT JOIN jsh_user cu ON cs.create_user = cu.id AND cu.delete_flag = '0'
+        WHERE cs.delete_flag = '0'
+        AND cs.tenant_id = #{tenantId}
+        <if test="startDate != null">
+            AND cs.schedule_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND cs.schedule_date &lt;= #{endDate}
+        </if>
+        <if test="employeeId != null">
+            AND cs.employee_id = #{employeeId}
+        </if>
+        <if test="shiftType != null and shiftType != ''">
+            AND cs.shift_type = #{shiftType}
+        </if>
+        <if test="status != null and status != ''">
+            AND cs.status = #{status}
+        </if>
+        ORDER BY cs.schedule_date DESC, cs.start_time ASC
+    </select>
+
+    <!-- 查询排班统计 -->
+    <select id="selectScheduleStatistics" resultType="com.jsh.erp.datasource.vo.CloisonneScheduleStatistics">
+        SELECT 
+            COUNT(*) as total_schedules,
+            COUNT(DISTINCT employee_id) as statistics_count,
+            SUM(work_hours) as total_work_hours,
+            AVG(work_hours) as avg_work_hours,
+            SUM(CASE WHEN status = 'normal' THEN 1 ELSE 0 END) as normal_count,
+            SUM(CASE WHEN status = 'leave' THEN 1 ELSE 0 END) as leave_count,
+            SUM(CASE WHEN status = 'swap' THEN 1 ELSE 0 END) as swap_count,
+            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count,
+            ROUND(SUM(CASE WHEN status = 'normal' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as attendance_rate
+        FROM jsh_cloisonne_schedule
+        WHERE delete_flag = '0'
+        AND tenant_id = #{tenantId}
+        <if test="startDate != null">
+            AND schedule_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND schedule_date &lt;= #{endDate}
+        </if>
+    </select>
+
+    <!-- 查询指定日期的值班人员 -->
+    <select id="selectOnDutyStaff" resultType="com.jsh.erp.datasource.vo.CloisonneScheduleVo4List">
+        SELECT 
+            cs.id,
+            cs.schedule_date,
+            cs.employee_id,
+            cs.employee_name,
+            u.position as employee_role,
+            u.phonenum as employee_phone,
+            cs.shift_type,
+            cs.start_time,
+            cs.end_time,
+            cs.work_hours,
+            cs.work_area,
+            cs.status,
+            cs.notes
+        FROM jsh_cloisonne_schedule cs
+        LEFT JOIN jsh_user u ON cs.employee_id = u.id AND u.delete_flag = '0'
+        WHERE cs.delete_flag = '0'
+        AND cs.tenant_id = #{tenantId}
+        AND cs.schedule_date = #{scheduleDate}
+        AND cs.status IN ('normal', 'swap')
+        ORDER BY cs.start_time ASC
+    </select>
+
+    <!-- 查询员工工作时长统计 -->
+    <select id="selectEmployeeWorkHours" resultType="com.jsh.erp.datasource.vo.CloisonneScheduleStatistics">
+        SELECT 
+            cs.employee_id,
+            cs.employee_name,
+            COUNT(*) as total_schedules,
+            SUM(cs.work_hours) as total_work_hours,
+            AVG(cs.work_hours) as avg_work_hours,
+            SUM(CASE WHEN cs.status = 'normal' THEN 1 ELSE 0 END) as normal_count,
+            SUM(CASE WHEN cs.status = 'leave' THEN 1 ELSE 0 END) as leave_count,
+            SUM(CASE WHEN cs.status = 'swap' THEN 1 ELSE 0 END) as swap_count,
+            SUM(CASE WHEN cs.status = 'absent' THEN 1 ELSE 0 END) as absent_count,
+            ROUND(SUM(CASE WHEN cs.status = 'normal' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as attendance_rate
+        FROM jsh_cloisonne_schedule cs
+        WHERE cs.delete_flag = '0'
+        AND cs.tenant_id = #{tenantId}
+        <if test="startDate != null">
+            AND cs.schedule_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND cs.schedule_date &lt;= #{endDate}
+        </if>
+        GROUP BY cs.employee_id, cs.employee_name
+        ORDER BY total_work_hours DESC
+    </select>
+
+    <!-- 查询每日排班数量统计 -->
+    <select id="selectDailyScheduleCount" resultType="com.jsh.erp.datasource.vo.CloisonneScheduleStatistics">
+        SELECT 
+            schedule_date as statistics_date,
+            COUNT(*) as statistics_count,
+            SUM(work_hours) as statistics_value
+        FROM jsh_cloisonne_schedule
+        WHERE delete_flag = '0'
+        AND tenant_id = #{tenantId}
+        <if test="startDate != null">
+            AND schedule_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND schedule_date &lt;= #{endDate}
+        </if>
+        GROUP BY schedule_date
+        ORDER BY schedule_date ASC
+    </select>
+
+    <!-- 查询班次分布统计 -->
+    <select id="selectShiftDistribution" resultType="com.jsh.erp.datasource.vo.CloisonneScheduleStatistics">
+        SELECT 
+            shift_type as statistics_name,
+            COUNT(*) as statistics_count,
+            SUM(work_hours) as statistics_value
+        FROM jsh_cloisonne_schedule
+        WHERE delete_flag = '0'
+        AND tenant_id = #{tenantId}
+        <if test="startDate != null">
+            AND schedule_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND schedule_date &lt;= #{endDate}
+        </if>
+        GROUP BY shift_type
+        ORDER BY statistics_count DESC
+    </select>
+
+    <!-- 检查员工在指定日期是否已有排班 -->
+    <select id="checkEmployeeScheduleExists" resultType="int">
+        SELECT COUNT(*)
+        FROM jsh_cloisonne_schedule
+        WHERE delete_flag = '0'
+        AND tenant_id = #{tenantId}
+        AND employee_id = #{employeeId}
+        AND schedule_date = #{scheduleDate}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 批量插入排班记录 -->
+    <insert id="batchInsertSchedule" parameterType="java.util.List">
+        INSERT INTO jsh_cloisonne_schedule (
+            schedule_date, employee_id, employee_name, shift_type, 
+            start_time, end_time, work_hours, work_area, status, notes,
+            tenant_id, create_time, create_user, delete_flag
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.scheduleDate}, #{item.employeeId}, #{item.employeeName}, #{item.shiftType},
+                #{item.startTime}, #{item.endTime}, #{item.workHours}, #{item.workArea}, #{item.status}, #{item.notes},
+                #{item.tenantId}, NOW(), #{item.createUser}, '0'
+            )
+        </foreach>
+    </insert>
+
+    <!-- 批量更新排班状态 -->
+    <update id="batchUpdateScheduleStatus">
+        UPDATE jsh_cloisonne_schedule 
+        SET status = #{status}, 
+            update_time = NOW(), 
+            update_user = #{updateUser}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND tenant_id = #{tenantId}
+        AND delete_flag = '0'
+    </update>
+
+    <!-- 根据员工ID查询最近的排班记录 -->
+    <select id="selectRecentScheduleByEmployee" resultType="com.jsh.erp.datasource.vo.CloisonneScheduleVo4List">
+        SELECT 
+            cs.id,
+            cs.schedule_date,
+            cs.employee_id,
+            cs.employee_name,
+            cs.shift_type,
+            cs.start_time,
+            cs.end_time,
+            cs.work_hours,
+            cs.work_area,
+            cs.status,
+            cs.notes,
+            cs.create_time
+        FROM jsh_cloisonne_schedule cs
+        WHERE cs.delete_flag = '0'
+        AND cs.tenant_id = #{tenantId}
+        AND cs.employee_id = #{employeeId}
+        ORDER BY cs.schedule_date DESC, cs.create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 查询冲突的排班记录 -->
+    <select id="selectConflictSchedule" resultType="com.jsh.erp.datasource.entities.CloisonneSchedule">
+        SELECT *
+        FROM jsh_cloisonne_schedule
+        WHERE delete_flag = '0'
+        AND tenant_id = #{tenantId}
+        AND employee_id = #{employeeId}
+        AND schedule_date = #{scheduleDate}
+        AND (
+            (start_time &lt;= #{startTime} AND end_time &gt; #{startTime})
+            OR (start_time &lt; #{endTime} AND end_time &gt;= #{endTime})
+            OR (start_time &gt;= #{startTime} AND end_time &lt;= #{endTime})
+        )
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+</mapper>

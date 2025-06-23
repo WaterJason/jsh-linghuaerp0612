@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jsh.erp.datasource.mappers.QualityInspectionMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.jsh.erp.datasource.entities.QualityInspection">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="inspection_number" property="inspectionNumber" jdbcType="VARCHAR"/>
+        <result column="task_id" property="taskId" jdbcType="BIGINT"/>
+        <result column="task_number" property="taskNumber" jdbcType="VARCHAR"/>
+        <result column="work_order_id" property="workOrderId" jdbcType="BIGINT"/>
+        <result column="work_order_number" property="workOrderNumber" jdbcType="VARCHAR"/>
+        <result column="product_id" property="productId" jdbcType="BIGINT"/>
+        <result column="product_name" property="productName" jdbcType="VARCHAR"/>
+        <result column="inspector_id" property="inspectorId" jdbcType="BIGINT"/>
+        <result column="inspector_name" property="inspectorName" jdbcType="VARCHAR"/>
+        <result column="inspection_time" property="inspectionTime" jdbcType="TIMESTAMP"/>
+        <result column="inspection_type" property="inspectionType" jdbcType="VARCHAR"/>
+        <result column="inspection_quantity" property="inspectionQuantity" jdbcType="DECIMAL"/>
+        <result column="qualified_quantity" property="qualifiedQuantity" jdbcType="DECIMAL"/>
+        <result column="defective_quantity" property="defectiveQuantity" jdbcType="DECIMAL"/>
+        <result column="unit_name" property="unitName" jdbcType="VARCHAR"/>
+        <result column="qualification_rate" property="qualificationRate" jdbcType="DECIMAL"/>
+        <result column="overall_result" property="overallResult" jdbcType="VARCHAR"/>
+        <result column="quality_grade" property="qualityGrade" jdbcType="VARCHAR"/>
+        <result column="overall_score" property="overallScore" jdbcType="DECIMAL"/>
+        <result column="appearance_score" property="appearanceScore" jdbcType="DECIMAL"/>
+        <result column="size_score" property="sizeScore" jdbcType="DECIMAL"/>
+        <result column="color_score" property="colorScore" jdbcType="DECIMAL"/>
+        <result column="texture_score" property="textureScore" jdbcType="DECIMAL"/>
+        <result column="detail_score" property="detailScore" jdbcType="DECIMAL"/>
+        <result column="overall_effect_score" property="overallEffectScore" jdbcType="DECIMAL"/>
+        <result column="problem_description" property="problemDescription" jdbcType="VARCHAR"/>
+        <result column="improvement_suggestion" property="improvementSuggestion" jdbcType="VARCHAR"/>
+        <result column="quality_photos" property="qualityPhotos" jdbcType="VARCHAR"/>
+        <result column="inspection_standard" property="inspectionStandard" jdbcType="VARCHAR"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="tenant_id" property="tenantId" jdbcType="BIGINT"/>
+        <result column="delete_flag" property="deleteFlag" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user" property="createUser" jdbcType="BIGINT"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="update_user" property="updateUser" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, inspection_number, task_id, task_number, work_order_id, work_order_number,
+        product_id, product_name, inspector_id, inspector_name, inspection_time, inspection_type,
+        inspection_quantity, qualified_quantity, defective_quantity, unit_name, qualification_rate,
+        overall_result, quality_grade, overall_score, appearance_score, size_score, color_score,
+        texture_score, detail_score, overall_effect_score, problem_description, improvement_suggestion,
+        quality_photos, inspection_standard, remark, tenant_id, delete_flag, create_time, create_user, update_time, update_user
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            delete_flag = '0'
+            <if test="parameterMap.tenantId != null">
+                AND tenant_id = #{parameterMap.tenantId}
+            </if>
+            <if test="parameterMap.inspectionNumber != null and parameterMap.inspectionNumber != ''">
+                AND inspection_number LIKE CONCAT('%', #{parameterMap.inspectionNumber}, '%')
+            </if>
+            <if test="parameterMap.taskNumber != null and parameterMap.taskNumber != ''">
+                AND task_number LIKE CONCAT('%', #{parameterMap.taskNumber}, '%')
+            </if>
+            <if test="parameterMap.workOrderNumber != null and parameterMap.workOrderNumber != ''">
+                AND work_order_number LIKE CONCAT('%', #{parameterMap.workOrderNumber}, '%')
+            </if>
+            <if test="parameterMap.productName != null and parameterMap.productName != ''">
+                AND product_name LIKE CONCAT('%', #{parameterMap.productName}, '%')
+            </if>
+            <if test="parameterMap.inspectorName != null and parameterMap.inspectorName != ''">
+                AND inspector_name LIKE CONCAT('%', #{parameterMap.inspectorName}, '%')
+            </if>
+            <if test="parameterMap.inspectionType != null and parameterMap.inspectionType != ''">
+                AND inspection_type = #{parameterMap.inspectionType}
+            </if>
+            <if test="parameterMap.overallResult != null and parameterMap.overallResult != ''">
+                AND overall_result = #{parameterMap.overallResult}
+            </if>
+            <if test="parameterMap.qualityGrade != null and parameterMap.qualityGrade != ''">
+                AND quality_grade = #{parameterMap.qualityGrade}
+            </if>
+            <if test="parameterMap.inspectionTimeFrom != null">
+                AND inspection_time >= #{parameterMap.inspectionTimeFrom}
+            </if>
+            <if test="parameterMap.inspectionTimeTo != null">
+                AND inspection_time &lt;= #{parameterMap.inspectionTimeTo}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据条件查询质检记录列表 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_quality_inspection
+        <include refid="Where_Clause"/>
+        ORDER BY inspection_time DESC, create_time DESC
+    </select>
+
+    <!-- 根据条件统计质检记录数量 -->
+    <select id="countByCondition" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM jsh_quality_inspection
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 根据质检单号查询质检记录 -->
+    <select id="selectByInspectionNumber" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_quality_inspection
+        WHERE inspection_number = #{inspectionNumber}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+    </select>
+
+    <!-- 根据工单查询质检记录列表 -->
+    <select id="selectByWorkOrderId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_quality_inspection
+        WHERE work_order_id = #{workOrderId}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY inspection_time DESC
+    </select>
+
+    <!-- 根据任务查询质检记录列表 -->
+    <select id="selectByTaskId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_quality_inspection
+        WHERE task_id = #{taskId}
+          AND tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        ORDER BY inspection_time DESC
+    </select>
+
+    <!-- 更新质检结果 -->
+    <update id="updateInspectionResult">
+        UPDATE jsh_quality_inspection
+        SET overall_result = #{overallResult},
+            quality_grade = #{qualityGrade},
+            overall_score = #{overallScore},
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id = #{id}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 批量删除质检记录（软删除） -->
+    <update id="batchDelete">
+        UPDATE jsh_quality_inspection
+        SET delete_flag = '1',
+            update_time = NOW(),
+            update_user = #{updateUser}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND delete_flag = '0'
+    </update>
+
+    <!-- 获取质检统计信息 -->
+    <select id="getQualityStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as totalInspections,
+            COUNT(CASE WHEN overall_result = 'PASS' THEN 1 END) as passedInspections,
+            COUNT(CASE WHEN overall_result = 'FAIL' THEN 1 END) as failedInspections,
+            COUNT(CASE WHEN overall_result = 'CONDITIONAL' THEN 1 END) as conditionalInspections,
+            SUM(inspection_quantity) as totalQuantity,
+            SUM(qualified_quantity) as qualifiedQuantity,
+            SUM(defective_quantity) as defectiveQuantity,
+            AVG(qualification_rate) as avgQualificationRate,
+            AVG(overall_score) as avgOverallScore,
+            AVG(appearance_score) as avgAppearanceScore,
+            AVG(size_score) as avgSizeScore,
+            AVG(color_score) as avgColorScore,
+            AVG(texture_score) as avgTextureScore,
+            AVG(detail_score) as avgDetailScore,
+            AVG(overall_effect_score) as avgOverallEffectScore,
+            COUNT(CASE WHEN quality_grade = 'A' THEN 1 END) as gradeACount,
+            COUNT(CASE WHEN quality_grade = 'B' THEN 1 END) as gradeBCount,
+            COUNT(CASE WHEN quality_grade = 'C' THEN 1 END) as gradeCCount,
+            COUNT(CASE WHEN quality_grade = 'D' THEN 1 END) as gradeDCount
+        FROM jsh_quality_inspection
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+    </select>
+
+    <!-- 根据质检类型统计数量 -->
+    <select id="getInspectionTypeStatistics" resultType="java.util.Map">
+        SELECT 
+            inspection_type,
+            COUNT(*) as count,
+            SUM(inspection_quantity) as totalQuantity,
+            SUM(qualified_quantity) as qualifiedQuantity,
+            AVG(qualification_rate) as avgQualificationRate,
+            AVG(overall_score) as avgScore
+        FROM jsh_quality_inspection
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        GROUP BY inspection_type
+        ORDER BY count DESC
+    </select>
+
+    <!-- 根据质检结果统计数量 -->
+    <select id="getInspectionResultStatistics" resultType="java.util.Map">
+        SELECT 
+            overall_result,
+            COUNT(*) as count,
+            SUM(inspection_quantity) as totalQuantity,
+            AVG(overall_score) as avgScore
+        FROM jsh_quality_inspection
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+        GROUP BY overall_result
+        ORDER BY count DESC
+    </select>
+
+    <!-- 查询待质检记录 -->
+    <select id="getPendingInspections" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_quality_inspection
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND overall_result IS NULL
+        ORDER BY create_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询不合格记录 -->
+    <select id="getUnqualifiedInspections" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM jsh_quality_inspection
+        WHERE tenant_id = #{tenantId}
+          AND delete_flag = '0'
+          AND overall_result = 'FAIL'
+        ORDER BY inspection_time DESC
+    </select>
+
+</mapper>

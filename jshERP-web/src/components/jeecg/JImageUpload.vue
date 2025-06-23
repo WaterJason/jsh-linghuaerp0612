@@ -132,18 +132,30 @@
         this.uploadGoOn=true
         let fileType = file.type;
         let fileSize = file.size;
-        if(fileType.indexOf('image')<0){
-          this.$message.warning('请上传图片');
+
+        // 支持的图片格式：JPG、JPEG、PNG、GIF、WebP
+        const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if(!allowedImageTypes.includes(fileType.toLowerCase())){
+          this.$message.warning('请上传JPG、JPEG、PNG、GIF或WebP格式的图片');
           this.uploadGoOn=false
           return false;
         }
-        //验证文件大小
-        if(fileSize>this.sizeLimit/10) {
-          let parseSizeLimit = (this.sizeLimit/1024/1024/10).toFixed(2)
-          this.$message.warning('抱歉，图片大小不能超过' + parseSizeLimit + 'M');
+
+        // 单个图片文件大小限制：最大20MB
+        const maxFileSize = 20 * 1024 * 1024; // 20MB
+        if(fileSize > maxFileSize) {
+          this.$message.warning('抱歉，图片大小不能超过20M');
           this.uploadGoOn=false
           return false;
         }
+
+        // 图片数量限制：每个商品最多支持上传10张图片
+        if(this.isMultiple && this.fileList.length >= 10) {
+          this.$message.warning('最多只能上传10张图片');
+          this.uploadGoOn=false
+          return false;
+        }
+
         return true
       },
       handleChange(info) {

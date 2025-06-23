@@ -65,9 +65,9 @@
             </a-row>
             <a-row class="form-row" :gutter="24">
               <a-col :md="6" :sm="24">
-                <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="颜色" data-step="5" data-title="颜色"
-                             data-intro="请填写商品的颜色，如果是多属性商品可以不填（下面有多属性开关）">
-                  <a-input placeholder="请输入颜色" v-decorator.trim="[ 'color' ]" />
+                <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="款式" data-step="5" data-title="款式"
+                             data-intro="请填写商品的款式，如果是多属性商品可以不填（下面有多属性开关）">
+                  <a-input placeholder="请输入款式" v-decorator.trim="[ 'color' ]" />
                 </a-form-item>
               </a-col>
               <a-col :md="6" :sm="24">
@@ -120,17 +120,29 @@
             <a-row class="form-row" :gutter="24">
               <a-col :lg="6" :md="6" :sm="6">
                 <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" :label="mpShort.otherField1.name">
-                  <a-input :placeholder="'请输入'+ mpShort.otherField1.name" v-decorator.trim="[ 'otherField1' ]" />
+                  <a-select :placeholder="'请选择'+ mpShort.otherField1.name" v-decorator="[ 'otherField1' ]" allowClear>
+                    <a-select-option v-for="item in dictOptions.baseMaterial" :key="item.value" :value="item.value">
+                      {{ item.text }}
+                    </a-select-option>
+                  </a-select>
                 </a-form-item>
               </a-col>
               <a-col :lg="6" :md="6" :sm="6">
                 <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" :label="mpShort.otherField2.name">
-                  <a-input :placeholder="'请输入'+ mpShort.otherField2.name" v-decorator.trim="[ 'otherField2' ]" />
+                  <a-select :placeholder="'请选择'+ mpShort.otherField2.name" v-decorator="[ 'otherField2' ]" allowClear>
+                    <a-select-option v-for="item in dictOptions.accessory" :key="item.value" :value="item.value">
+                      {{ item.text }}
+                    </a-select-option>
+                  </a-select>
                 </a-form-item>
               </a-col>
               <a-col :lg="6" :md="6" :sm="6">
                 <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" :label="mpShort.otherField3.name">
-                  <a-input :placeholder="'请输入'+ mpShort.otherField3.name" v-decorator.trim="[ 'otherField3' ]" />
+                  <a-select :placeholder="'请选择'+ mpShort.otherField3.name" v-decorator="[ 'otherField3' ]" allowClear>
+                    <a-select-option v-for="item in dictOptions.packaging" :key="item.value" :value="item.value">
+                      {{ item.text }}
+                    </a-select-option>
+                  </a-select>
                 </a-form-item>
               </a-col>
             </a-row>
@@ -274,7 +286,7 @@
             <a-row class="form-row" :gutter="24">
               <a-col :lg="18" :md="18" :sm="24">
                 <a-form-item :labelCol="{xs: { span: 24 },sm: { span: 3 }}" :wrapperCol="{xs: { span: 24 },sm: { span: 20 }}" label="上传提示">
-                  图片最多4张，且单张大小不超过1M
+                  图片最多10张，且单张大小不超过20M，支持JPG、JPEG、PNG、GIF、WebP格式
                 </a-form-item>
               </a-col>
               <a-col :lg="6" :md="6" :sm="24"></a-col>
@@ -360,6 +372,12 @@
           otherField1: { name: '扩展1' },
           otherField2: { name: '扩展2' },
           otherField3: { name: '扩展3' }
+        },
+        // 字典数据
+        dictOptions: {
+          baseMaterial: [],
+          accessory: [],
+          packaging: []
         },
         meTable: {
           loading: false,
@@ -1237,6 +1255,29 @@
             this.mpShort.otherField3.name = mpList[i].anotherName
           }
         }
+        // 加载字典数据
+        this.loadDictData()
+      },
+      // 加载字典数据
+      loadDictData() {
+        // 加载底胎材质字典
+        getAction('/materialDict/getDictItems', { typeCode: 'base_material' }).then(res => {
+          if (res.code === 200) {
+            this.dictOptions.baseMaterial = res.data || []
+          }
+        })
+        // 加载配饰字典
+        getAction('/materialDict/getDictItems', { typeCode: 'accessory' }).then(res => {
+          if (res.code === 200) {
+            this.dictOptions.accessory = res.data || []
+          }
+        })
+        // 加载包装装裱字典
+        getAction('/materialDict/getDictItems', { typeCode: 'packaging' }).then(res => {
+          if (res.code === 200) {
+            this.dictOptions.packaging = res.data || []
+          }
+        })
       },
       handleNameChange(e) {
         let that = this

@@ -12,6 +12,17 @@ import 'ant-design-vue/dist/antd.less';  // or 'ant-design-vue/dist/antd.less'
 
 import '@/permission' // permission control
 import '@/utils/filter' // base filter
+import dayjs from 'dayjs'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+import weekOfYear from 'dayjs/plugin/weekOfYear'
+import isoWeek from 'dayjs/plugin/isoWeek'
+import advancedFormat from 'dayjs/plugin/advancedFormat'
+
+// 扩展dayjs插件以支持moment的功能
+dayjs.extend(customParseFormat)
+dayjs.extend(weekOfYear)
+dayjs.extend(isoWeek)
+dayjs.extend(advancedFormat)
 import Print from 'vue-print-nb-jeecg'
 /*import '@babel/polyfill'*/
 import preview from 'vue-photo-preview'
@@ -50,6 +61,9 @@ Vue.use(preview)
 Vue.use(vueBus);
 Vue.use(JeecgComponents)
 Vue.use(VueAreaLinkage)
+
+// 添加dayjs为全局属性，兼容原有的$moment调用
+Vue.prototype.$moment = dayjs
 
 new Vue({
   router,

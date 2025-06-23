@@ -5,21 +5,14 @@
     <!-- 看板工单查询结果映射 -->
     <resultMap id="KanbanWorkOrderResultMap" type="java.util.Map">
         <result column="id" jdbcType="BIGINT" property="id" />
-        <result column="work_order_no" jdbcType="VARCHAR" property="workOrderNo" />
+        <result column="work_order_number" jdbcType="VARCHAR" property="workOrderNumber" />
         <result column="production_order_id" jdbcType="BIGINT" property="productionOrderId" />
         <result column="work_type" jdbcType="VARCHAR" property="workType" />
         <result column="status" jdbcType="VARCHAR" property="status" />
-        <result column="handler_id" jdbcType="BIGINT" property="handlerId" />
-        <result column="handler_name" jdbcType="VARCHAR" property="handlerName" />
+        <result column="handler_user_id" jdbcType="BIGINT" property="handlerUserId" />
         <result column="cost" jdbcType="DECIMAL" property="cost" />
-        <result column="estimated_hours" jdbcType="DECIMAL" property="estimatedHours" />
-        <result column="actual_hours" jdbcType="DECIMAL" property="actualHours" />
-        <result column="start_time" jdbcType="TIMESTAMP" property="startTime" />
-        <result column="complete_time" jdbcType="TIMESTAMP" property="completeTime" />
-        <result column="complete_images" jdbcType="VARCHAR" property="completeImages" />
-        <result column="logistics_no" jdbcType="VARCHAR" property="logisticsNo" />
-        <result column="remark" jdbcType="VARCHAR" property="remark" />
-        <result column="quality_notes" jdbcType="VARCHAR" property="qualityNotes" />
+        <result column="completion_image_url" jdbcType="VARCHAR" property="completionImageUrl" />
+        <result column="logistics_number" jdbcType="VARCHAR" property="logisticsNumber" />
         <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
         <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
         <!-- 关联的产品信息 -->
@@ -29,29 +22,21 @@
         <result column="material_model" jdbcType="VARCHAR" property="materialModel" />
         <result column="material_color" jdbcType="VARCHAR" property="materialColor" />
         <!-- 关联的用户信息 -->
-        <result column="user_real_name" jdbcType="VARCHAR" property="userRealName" />
-        <result column="user_username" jdbcType="VARCHAR" property="userUsername" />
+        <result column="handler_name" jdbcType="VARCHAR" property="handlerName" />
     </resultMap>
 
     <!-- 看板工单查询 - 关联产品和用户信息 -->
     <select id="selectWorkOrderListForKanban" resultMap="KanbanWorkOrderResultMap">
-        SELECT 
+        SELECT
             wo.id,
-            wo.work_order_no,
+            wo.work_order_number,
             wo.production_order_id,
             wo.work_type,
             wo.status,
-            wo.handler_id,
-            wo.handler_name,
+            wo.handler_user_id,
             wo.cost,
-            wo.estimated_hours,
-            wo.actual_hours,
-            wo.start_time,
-            wo.complete_time,
-            wo.complete_images,
-            wo.logistics_no,
-            wo.remark,
-            wo.quality_notes,
+            wo.completion_image_url,
+            wo.logistics_number,
             wo.create_time,
             wo.update_time,
             <!-- 产品信息 -->
@@ -61,21 +46,17 @@
             m.model AS material_model,
             m.color AS material_color,
             <!-- 用户信息 -->
-            u.username AS user_username,
-            p.name AS user_real_name
+            u.username AS handler_name
         FROM jsh_work_order wo
         <!-- 关联生产订单获取产品信息 -->
-        LEFT JOIN jsh_production_order po ON wo.production_order_id = po.id 
+        LEFT JOIN jsh_production_order po ON wo.production_order_id = po.id
             AND IFNULL(po.delete_flag, '0') != '1'
         <!-- 关联产品表获取产品详细信息 -->
-        LEFT JOIN jsh_material m ON po.material_id = m.id 
+        LEFT JOIN jsh_material m ON po.material_id = m.id
             AND IFNULL(m.delete_flag, '0') != '1'
         <!-- 关联用户表获取处理人信息 -->
-        LEFT JOIN jsh_user u ON wo.handler_id = u.id 
+        LEFT JOIN jsh_user u ON wo.handler_user_id = u.id
             AND IFNULL(u.delete_flag, '0') != '1'
-        <!-- 关联人员表获取真实姓名 -->
-        LEFT JOIN jsh_person p ON u.id = p.user_id 
-            AND IFNULL(p.delete_flag, '0') != '1'
         WHERE 1=1
         <!-- 状态筛选 -->
         <if test="status != null and status != ''">
@@ -92,8 +73,8 @@
         <!-- 逻辑删除过滤 -->
         AND IFNULL(wo.delete_flag, '0') != '1'
         <!-- 排序：优先级为状态 > 创建时间 -->
-        ORDER BY 
-            CASE wo.status 
+        ORDER BY
+            CASE wo.status
                 WHEN 'PENDING' THEN 1
                 WHEN 'IN_PROGRESS' THEN 2
                 WHEN 'COMPLETED' THEN 3

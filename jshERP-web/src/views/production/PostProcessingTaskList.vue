@@ -1,193 +1,345 @@
 <template>
-  <div class="post-processing-task-list">
-    <a-card :bordered="false" title="后工任务列表">
-      <!-- 查询条件 -->
-      <div class="table-page-search-wrapper">
-        <a-form layout="inline">
-          <a-row :gutter="48">
-            <a-col :md="8" :sm="24">
-              <a-form-item label="工单号">
-                <a-input v-model="queryParam.workOrderNo" placeholder="请输入工单号" />
-              </a-form-item>
+  <a-row :gutter="24">
+    <a-col :md="24">
+      <a-card :style="cardStyle" :bordered="false" class="post-processing-tasks">
+        <!-- 页面标题和操作区域 -->
+        <div class="page-header">
+          <div class="header-left">
+            <h2 class="page-title">
+              <a-icon type="tool" />
+              后工任务列表
+            </h2>
+            <div class="page-subtitle">任务领取、自动计费、质检确认</div>
+          </div>
+          <div class="header-right">
+            <a-button-group>
+              <a-button @click="handleRefresh" :loading="loading">
+                <a-icon type="reload" />刷新
+              </a-button>
+              <a-button @click="handleBatchClaim" type="primary">
+                <a-icon type="plus" />批量领取
+              </a-button>
+              <a-button @click="handleMyTasks">
+                <a-icon type="user" />我的任务
+              </a-button>
+            </a-button-group>
+          </div>
+        </div>
+
+        <!-- 统计面板 -->
+        <div class="statistics-panel">
+          <a-row :gutter="16">
+            <a-col :md="6" :sm="12" :xs="24">
+              <div class="stat-card available">
+                <div class="stat-icon">
+                  <a-icon type="inbox" />
+                </div>
+                <div class="stat-content">
+                  <div class="stat-title">可领取任务</div>
+                  <div class="stat-value">{{ statistics.availableTasks || 0 }}</div>
+                </div>
+              </div>
             </a-col>
-            <a-col :md="8" :sm="24">
-              <a-form-item label="状态">
-                <a-select v-model="queryParam.status" placeholder="请选择状态" allowClear>
-                  <a-select-option value="PENDING">待认领</a-select-option>
-                  <a-select-option value="IN_PROGRESS">进行中</a-select-option>
-                  <a-select-option value="COMPLETED">已完成</a-select-option>
-                </a-select>
-              </a-form-item>
+            <a-col :md="6" :sm="12" :xs="24">
+              <div class="stat-card processing">
+                <div class="stat-icon">
+                  <a-icon type="loading" />
+                </div>
+                <div class="stat-content">
+                  <div class="stat-title">进行中任务</div>
+                  <div class="stat-value">{{ statistics.processingTasks || 0 }}</div>
+                </div>
+              </div>
             </a-col>
-            <a-col :md="8" :sm="24">
-              <span class="table-page-search-submitButtons">
-                <a-button type="primary" @click="searchQuery" icon="search">查询</a-button>
-                <a-button style="margin-left: 8px" @click="searchReset" icon="reload">重置</a-button>
-              </span>
+            <a-col :md="6" :sm="12" :xs="24">
+              <div class="stat-card completed">
+                <div class="stat-icon">
+                  <a-icon type="check-circle" />
+                </div>
+                <div class="stat-content">
+                  <div class="stat-title">已完成任务</div>
+                  <div class="stat-value">{{ statistics.completedTasks || 0 }}</div>
+                </div>
+              </div>
+            </a-col>
+            <a-col :md="6" :sm="12" :xs="24">
+              <div class="stat-card earnings">
+                <div class="stat-icon">
+                  <a-icon type="dollar" />
+                </div>
+                <div class="stat-content">
+                  <div class="stat-title">今日收益</div>
+                  <div class="stat-value">¥{{ statistics.todayEarnings || 0 }}</div>
+                </div>
+              </div>
             </a-col>
           </a-row>
-        </a-form>
-      </div>
-
-      <!-- 操作按钮 -->
-      <div class="table-operator">
-        <a-button type="primary" icon="reload" @click="loadData">刷新</a-button>
-      </div>
-
-      <!-- 数据表格 -->
-      <a-table
-        ref="table"
-        size="middle"
-        bordered
-        rowKey="id"
-        :columns="columns"
-        :dataSource="dataSource"
-        :pagination="ipagination"
-        :loading="loading"
-        @change="handleTableChange"
-      >
-        <span slot="action" slot-scope="text, record">
-          <a-button 
-            v-if="record.status === 'PENDING'" 
-            type="primary" 
-            size="small" 
-            @click="handleClaim(record)"
-            v-has="'claim'"
-          >
-            认领
-          </a-button>
-          <a-button 
-            v-if="record.status === 'IN_PROGRESS' && record.handlerId === currentUserId" 
-            type="primary" 
-            size="small" 
-            @click="handleComplete(record)"
-            v-has="'complete'"
-          >
-            完工
-          </a-button>
-          <a-button 
-            v-if="record.status === 'COMPLETED'" 
-            type="default" 
-            size="small" 
-            @click="handleViewImages(record)"
-          >
-            查看图片
-          </a-button>
-        </span>
-
-        <span slot="status" slot-scope="text">
-          <a-tag :color="getStatusColor(text)">{{ getStatusText(text) }}</a-tag>
-        </span>
-
-        <span slot="workType" slot-scope="text">
-          <a-tag :color="getWorkTypeColor(text)">{{ getWorkTypeName(text) }}</a-tag>
-        </span>
-      </a-table>
-    </a-card>
-
-    <!-- 认领确认对话框 -->
-    <a-modal
-      title="认领任务"
-      :visible="claimModalVisible"
-      @ok="handleClaimConfirm"
-      @cancel="claimModalVisible = false"
-      :confirmLoading="claimLoading"
-    >
-      <p>确定要认领工单 <strong>{{ currentTask.workOrderNo }}</strong> 吗？</p>
-      <p>认领后该任务将分配给您处理。</p>
-    </a-modal>
-
-    <!-- 完工对话框 -->
-    <a-modal
-      title="完工确认"
-      :visible="completeModalVisible"
-      @ok="handleCompleteConfirm"
-      @cancel="completeModalVisible = false"
-      :confirmLoading="completeLoading"
-      width="600px"
-    >
-      <a-form :form="completeForm" layout="vertical">
-        <a-form-item label="工单号">
-          <a-input :value="currentTask.workOrderNo" disabled />
-        </a-form-item>
-        <a-form-item label="上传完工图片">
-          <a-upload
-            v-decorator="['completeImages']"
-            :file-list="fileList"
-            :before-upload="beforeUpload"
-            @change="handleUploadChange"
-            list-type="picture-card"
-            :multiple="true"
-            accept="image/*"
-          >
-            <div v-if="fileList.length < 8">
-              <a-icon type="plus" />
-              <div class="ant-upload-text">上传图片</div>
-            </div>
-          </a-upload>
-        </a-form-item>
-        <a-form-item label="质检备注">
-          <a-textarea
-            v-decorator="['qualityNotes']"
-            placeholder="请输入质检备注"
-            :rows="4"
-          />
-        </a-form-item>
-      </a-form>
-    </a-modal>
-
-    <!-- 图片预览对话框 -->
-    <a-modal
-      title="完工图片"
-      :visible="imagePreviewVisible"
-      @cancel="imagePreviewVisible = false"
-      :footer="null"
-      width="800px"
-    >
-      <div class="image-preview-container">
-        <img 
-          v-for="(image, index) in previewImages" 
-          :key="index" 
-          :src="image" 
-          :alt="`完工图片${index + 1}`"
-          class="preview-image"
-        />
-      </div>
-    </a-modal>
-  </div>
+        </div>
+        
+        <!-- 筛选和搜索区域 -->
+        <div class="filter-section">
+          <a-row :gutter="16">
+            <a-col :md="6">
+              <a-select 
+                v-model="filters.status" 
+                placeholder="任务状态" 
+                allowClear
+                @change="loadTaskList">
+                <a-select-option value="AVAILABLE">可领取</a-select-option>
+                <a-select-option value="CLAIMED">已领取</a-select-option>
+                <a-select-option value="IN_PROGRESS">进行中</a-select-option>
+                <a-select-option value="COMPLETED">已完成</a-select-option>
+                <a-select-option value="QUALITY_CHECKED">已质检</a-select-option>
+              </a-select>
+            </a-col>
+            <a-col :md="6">
+              <a-select 
+                v-model="filters.taskType" 
+                placeholder="任务类型" 
+                allowClear
+                @change="loadTaskList">
+                <a-select-option value="POLISHING">抛光</a-select-option>
+                <a-select-option value="PAINTING">上色</a-select-option>
+                <a-select-option value="ASSEMBLY">组装</a-select-option>
+                <a-select-option value="PACKAGING">包装</a-select-option>
+                <a-select-option value="QUALITY_CHECK">质检</a-select-option>
+              </a-select>
+            </a-col>
+            <a-col :md="6">
+              <a-select 
+                v-model="filters.priority" 
+                placeholder="优先级" 
+                allowClear
+                @change="loadTaskList">
+                <a-select-option value="URGENT">紧急</a-select-option>
+                <a-select-option value="HIGH">高</a-select-option>
+                <a-select-option value="NORMAL">普通</a-select-option>
+                <a-select-option value="LOW">低</a-select-option>
+              </a-select>
+            </a-col>
+            <a-col :md="6">
+              <a-input-search
+                v-model="filters.keyword"
+                placeholder="搜索任务编号或产品名称"
+                @search="loadTaskList"
+                @change="onSearchChange" />
+            </a-col>
+          </a-row>
+        </div>
+        
+        <!-- 任务列表 -->
+        <div class="task-list-section">
+          <a-table
+            :columns="columns"
+            :dataSource="taskList"
+            :pagination="pagination"
+            :loading="loading"
+            :rowSelection="rowSelection"
+            :scroll="{ x: 1200 }"
+            @change="handleTableChange"
+            rowKey="id">
+            
+            <!-- 任务编号列 -->
+            <template slot="taskNumber" slot-scope="text, record">
+              <div class="task-number">
+                <a @click="handleViewTask(record)">{{ text }}</a>
+                <a-tag v-if="record.isUrgent" color="red" size="small">紧急</a-tag>
+              </div>
+            </template>
+            
+            <!-- 产品信息列 -->
+            <template slot="productInfo" slot-scope="text, record">
+              <div class="product-info">
+                <div class="product-name">{{ record.productName }}</div>
+                <div class="product-spec">{{ record.productSpec }}</div>
+              </div>
+            </template>
+            
+            <!-- 任务类型列 -->
+            <template slot="taskType" slot-scope="text">
+              <a-tag :color="getTaskTypeColor(text)">
+                {{ getTaskTypeText(text) }}
+              </a-tag>
+            </template>
+            
+            <!-- 数量列 -->
+            <template slot="quantity" slot-scope="text, record">
+              <div class="quantity-info">
+                <span class="total">{{ record.totalQuantity }}</span>
+                <span class="unit">{{ record.unitName }}</span>
+                <div v-if="record.completedQuantity > 0" class="completed">
+                  已完成: {{ record.completedQuantity }}
+                </div>
+              </div>
+            </template>
+            
+            <!-- 优先级列 -->
+            <template slot="priority" slot-scope="text">
+              <a-tag :color="getPriorityColor(text)">
+                {{ getPriorityText(text) }}
+              </a-tag>
+            </template>
+            
+            <!-- 状态列 -->
+            <template slot="status" slot-scope="text">
+              <a-badge :status="getStatusBadge(text)" :text="getStatusText(text)" />
+            </template>
+            
+            <!-- 工费列 -->
+            <template slot="fee" slot-scope="text, record">
+              <div class="fee-info">
+                <div class="unit-fee">单价: ¥{{ record.unitFee }}</div>
+                <div class="total-fee">总计: ¥{{ (record.unitFee * record.totalQuantity).toFixed(2) }}</div>
+              </div>
+            </template>
+            
+            <!-- 领取人列 -->
+            <template slot="claimedBy" slot-scope="text, record">
+              <div v-if="record.claimedBy" class="worker-info">
+                <a-avatar size="small" :src="record.workerAvatar">
+                  {{ record.claimedBy.charAt(0) }}
+                </a-avatar>
+                <span class="worker-name">{{ record.claimedBy }}</span>
+              </div>
+              <span v-else class="unclaimed">未领取</span>
+            </template>
+            
+            <!-- 时间列 -->
+            <template slot="timeInfo" slot-scope="text, record">
+              <div class="time-info">
+                <div v-if="record.claimTime">
+                  <span class="time-label">领取:</span>
+                  <span class="time-value">{{ formatTime(record.claimTime) }}</span>
+                </div>
+                <div v-if="record.completeTime">
+                  <span class="time-label">完成:</span>
+                  <span class="time-value">{{ formatTime(record.completeTime) }}</span>
+                </div>
+                <div v-if="record.deadline">
+                  <span class="time-label">截止:</span>
+                  <span class="time-value" :class="{ 'overdue': isOverdue(record.deadline) }">
+                    {{ formatTime(record.deadline) }}
+                  </span>
+                </div>
+              </div>
+            </template>
+            
+            <!-- 操作列 -->
+            <template slot="action" slot-scope="text, record">
+              <div class="action-buttons">
+                <!-- 可领取状态 -->
+                <template v-if="record.status === 'AVAILABLE'">
+                  <a-button size="small" type="primary" @click="handleClaimTask(record)">
+                    <a-icon type="plus" />领取
+                  </a-button>
+                </template>
+                
+                <!-- 已领取状态 -->
+                <template v-if="record.status === 'CLAIMED'">
+                  <a-button size="small" type="primary" @click="handleStartTask(record)">
+                    <a-icon type="play-circle" />开始
+                  </a-button>
+                  <a-button size="small" @click="handleReleaseTask(record)">
+                    <a-icon type="rollback" />释放
+                  </a-button>
+                </template>
+                
+                <!-- 进行中状态 -->
+                <template v-if="record.status === 'IN_PROGRESS'">
+                  <a-button size="small" type="primary" @click="handleReportProgress(record)">
+                    <a-icon type="file-text" />报工
+                  </a-button>
+                  <a-button size="small" @click="handleCompleteTask(record)">
+                    <a-icon type="check" />完成
+                  </a-button>
+                </template>
+                
+                <!-- 已完成状态 -->
+                <template v-if="record.status === 'COMPLETED'">
+                  <a-button size="small" type="primary" @click="handleQualityCheck(record)">
+                    <a-icon type="safety-certificate" />质检
+                  </a-button>
+                </template>
+                
+                <!-- 通用操作 -->
+                <a-button size="small" @click="handleViewTask(record)">
+                  <a-icon type="eye" />详情
+                </a-button>
+              </div>
+            </template>
+          </a-table>
+        </div>
+        
+        <!-- 模态框 -->
+        <task-detail-modal ref="taskDetailModal" />
+        <progress-report-modal ref="progressReportModal" @ok="loadTaskList" />
+        <quality-check-modal ref="qualityCheckModal" @ok="loadTaskList" />
+      </a-card>
+    </a-col>
+  </a-row>
 </template>
 
 <script>
+import TaskDetailModal from './modules/TaskDetailModal'
+import ProgressReportModal from './modules/ProgressReportModal'
+import QualityCheckModal from './modules/QualityCheckModal'
 import { getAction, postAction } from '@/api/manage'
+import { JeecgListMixin } from '@/mixins/JeecgListMixin'
+import dayjs from 'dayjs'
 
 export default {
-  name: 'PostProcessingTaskList',
+  name: "PostProcessingTaskList",
+  mixins: [JeecgListMixin],
+  components: {
+    TaskDetailModal,
+    ProgressReportModal,
+    QualityCheckModal
+  },
   data() {
     return {
-      // 查询参数
-      queryParam: {
-        workType: 'POST_PROCESS' // 只显示后工类型的工单
+      // 基础数据
+      taskList: [],
+      statistics: {},
+      
+      // 筛选条件
+      filters: {
+        status: undefined,
+        taskType: undefined,
+        priority: undefined,
+        keyword: ''
       },
-      // 表格数据
-      dataSource: [],
-      // 表格列配置
+      
+      // 表格配置
       columns: [
         {
-          title: '工单号',
-          dataIndex: 'workOrderNo',
+          title: '任务编号',
+          dataIndex: 'taskNumber',
           width: 150,
-          fixed: 'left'
+          scopedSlots: { customRender: 'taskNumber' }
         },
         {
-          title: '生产订单ID',
-          dataIndex: 'productionOrderId',
-          width: 120
+          title: '产品信息',
+          dataIndex: 'productInfo',
+          width: 200,
+          scopedSlots: { customRender: 'productInfo' }
         },
         {
-          title: '工单类型',
-          dataIndex: 'workType',
+          title: '任务类型',
+          dataIndex: 'taskType',
+          width: 100,
+          scopedSlots: { customRender: 'taskType' }
+        },
+        {
+          title: '数量',
+          dataIndex: 'quantity',
           width: 120,
-          scopedSlots: { customRender: 'workType' }
+          scopedSlots: { customRender: 'quantity' }
+        },
+        {
+          title: '优先级',
+          dataIndex: 'priority',
+          width: 80,
+          scopedSlots: { customRender: 'priority' }
         },
         {
           title: '状态',
@@ -196,315 +348,627 @@ export default {
           scopedSlots: { customRender: 'status' }
         },
         {
-          title: '处理人',
-          dataIndex: 'handlerName',
-          width: 100,
-          customRender: (text) => text || '未分配'
+          title: '工费',
+          dataIndex: 'fee',
+          width: 120,
+          scopedSlots: { customRender: 'fee' }
         },
         {
-          title: '预计工时',
-          dataIndex: 'estimatedHours',
-          width: 100,
-          customRender: (text) => text ? `${text}小时` : '-'
+          title: '领取人',
+          dataIndex: 'claimedBy',
+          width: 120,
+          scopedSlots: { customRender: 'claimedBy' }
         },
         {
-          title: '实际工时',
-          dataIndex: 'actualHours',
-          width: 100,
-          customRender: (text) => text ? `${text}小时` : '-'
-        },
-        {
-          title: '开始时间',
-          dataIndex: 'startTime',
-          width: 150,
-          customRender: (text) => {
-            return text ? this.$moment(text).format('YYYY-MM-DD HH:mm') : '-'
-          }
-        },
-        {
-          title: '完成时间',
-          dataIndex: 'completeTime',
-          width: 150,
-          customRender: (text) => {
-            return text ? this.$moment(text).format('YYYY-MM-DD HH:mm') : '-'
-          }
+          title: '时间信息',
+          dataIndex: 'timeInfo',
+          width: 180,
+          scopedSlots: { customRender: 'timeInfo' }
         },
         {
           title: '操作',
           dataIndex: 'action',
-          width: 120,
+          width: 200,
           fixed: 'right',
           scopedSlots: { customRender: 'action' }
         }
       ],
-      // 分页配置
-      ipagination: {
-        current: 1,
-        pageSize: 10,
-        pageSizeOptions: ['10', '20', '30'],
-        showTotal: (total, range) => {
-          return range[0] + '-' + range[1] + ' 共' + total + '条'
-        },
-        showQuickJumper: true,
-        showSizeChanger: true,
-        total: 0
-      },
-      // 加载状态
+      
+      // 行选择
+      selectedRowKeys: [],
+      
+      // 状态控制
       loading: false,
       
-      // 认领相关
-      claimModalVisible: false,
-      claimLoading: false,
-      
-      // 完工相关
-      completeModalVisible: false,
-      completeLoading: false,
-      completeForm: this.$form.createForm(this),
-      fileList: [],
-      
-      // 图片预览
-      imagePreviewVisible: false,
-      previewImages: [],
-      
-      // 当前操作的任务
-      currentTask: {},
-      
-      // 当前用户ID
-      currentUserId: null
+      // API URLs
+      url: {
+        list: "/postProcessing/list",
+        statistics: "/postProcessing/statistics",
+        assign: "/postProcessing/assign",
+        start: "/postProcessing/start",
+        complete: "/postProcessing/complete",
+        delete: "/postProcessing/delete",
+        deleteBatch: "/postProcessing/deleteBatch",
+        exportXlsUrl: "/postProcessing/exportExcel"
+      }
     }
   },
-  
-  mounted() {
-    this.getCurrentUser()
-    this.loadData()
+  computed: {
+    rowSelection() {
+      return {
+        selectedRowKeys: this.selectedRowKeys,
+        onChange: this.onSelectChange,
+        getCheckboxProps: record => ({
+          disabled: record.status !== 'AVAILABLE'
+        })
+      };
+    }
   },
-  
+  mounted() {
+    this.loadTaskList();
+    this.loadStatistics();
+  },
   methods: {
-    // 获取当前用户信息
-    getCurrentUser() {
-      // 从localStorage或Vuex中获取当前用户ID
-      const userInfo = this.$store.getters.userInfo
-      this.currentUserId = userInfo ? userInfo.id : null
-    },
-    
-    // 加载数据
-    loadData(arg) {
-      if (arg === 1) {
-        this.ipagination.current = 1
-      }
-      const params = Object.assign({}, this.queryParam, this.isorter)
-      params.pageNo = this.ipagination.current
-      params.pageSize = this.ipagination.pageSize
-      
-      this.loading = true
-      getAction('/workOrder/list', params).then(res => {
-        if (res.code === 200) {
-          this.dataSource = res.data.rows
-          this.ipagination.total = res.data.total
-        } else {
-          this.$message.error('查询失败：' + res.data.message)
-        }
-      }).catch(err => {
-        this.$message.error('查询失败')
-        console.error(err)
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    
-    // 查询
-    searchQuery() {
-      this.loadData(1)
-    },
-    
-    // 重置
-    searchReset() {
-      this.queryParam = {
-        workType: 'POST_PROCESS'
-      }
-      this.loadData(1)
-    },
-    
-    // 认领任务
-    handleClaim(record) {
-      this.currentTask = record
-      this.claimModalVisible = true
-    },
-    
-    // 确认认领
-    handleClaimConfirm() {
-      this.claimLoading = true
-      const userInfo = this.$store.getters.userInfo
-      
-      postAction('/workOrder/assign', {
-        id: this.currentTask.id,
-        handlerId: userInfo.id,
-        handlerName: userInfo.username
-      }).then(res => {
-        if (res.code === 200) {
-          this.$message.success('认领成功')
-          this.claimModalVisible = false
-          this.loadData()
-        } else {
-          this.$message.error('认领失败：' + res.data.message)
-        }
-      }).catch(err => {
-        this.$message.error('认领失败')
-        console.error(err)
-      }).finally(() => {
-        this.claimLoading = false
-      })
-    },
-    
-    // 完工
-    handleComplete(record) {
-      this.currentTask = record
-      this.completeModalVisible = true
-      this.completeForm.resetFields()
-      this.fileList = []
-    },
-    
-    // 确认完工
-    handleCompleteConfirm() {
-      this.completeForm.validateFields((err, values) => {
-        if (!err) {
-          this.completeLoading = true
-          
-          // 处理上传的图片
-          const imageUrls = this.fileList.map(file => file.response ? file.response.url : file.url).filter(url => url)
-          
-          postAction('/workOrder/complete', {
-            id: this.currentTask.id,
-            completeImages: JSON.stringify(imageUrls),
-            qualityNotes: values.qualityNotes
-          }).then(res => {
-            if (res.code === 200) {
-              this.$message.success('完工确认成功')
-              this.completeModalVisible = false
-              this.loadData()
-            } else {
-              this.$message.error('完工确认失败：' + res.data.message)
-            }
-          }).catch(err => {
-            this.$message.error('完工确认失败')
-            console.error(err)
-          }).finally(() => {
-            this.completeLoading = false
-          })
-        }
-      })
-    },
-    
-    // 查看图片
-    handleViewImages(record) {
+    // 加载任务列表
+    async loadTaskList() {
+      this.loading = true;
       try {
-        this.previewImages = JSON.parse(record.completeImages || '[]')
-        this.imagePreviewVisible = true
-      } catch (e) {
-        this.$message.error('图片数据格式错误')
+        // 使用模拟数据，后续替换为真实API调用
+        this.loadMockData();
+        
+        // TODO: 替换为真实API调用
+        // const params = {
+        //   ...this.filters,
+        //   pageNo: this.ipagination.current,
+        //   pageSize: this.ipagination.pageSize
+        // };
+        // const res = await getAction(this.url.list, params);
+        // if (res.code === 200) {
+        //   this.taskList = res.data.records || [];
+        //   this.ipagination.total = res.data.total || 0;
+        // }
+      } catch (error) {
+        this.$message.error('加载任务列表失败');
+        console.error('Load task list error:', error);
+      } finally {
+        this.loading = false;
       }
     },
     
-    // 文件上传前处理
-    beforeUpload(file) {
-      const isImage = file.type.indexOf('image/') === 0
-      if (!isImage) {
-        this.$message.error('只能上传图片文件!')
-        return false
+    // 加载统计数据
+    async loadStatistics() {
+      try {
+        // 使用模拟数据
+        this.statistics = {
+          availableTasks: 15,
+          processingTasks: 8,
+          completedTasks: 23,
+          todayEarnings: 1250.50
+        };
+
+        // TODO: 替换为真实API调用
+        // const res = await getAction(this.url.statistics);
+        // if (res.code === 200) {
+        //   this.statistics = res.data || {};
+        // }
+      } catch (error) {
+        console.error('Load statistics error:', error);
       }
-      const isLt20M = file.size / 1024 / 1024 < 20
-      if (!isLt20M) {
-        this.$message.error('图片大小不能超过20MB!')
-        return false
-      }
-      return true
     },
-    
-    // 文件上传变化处理
-    handleUploadChange({ fileList }) {
-      this.fileList = fileList
+
+    // 加载模拟数据
+    loadMockData() {
+      this.taskList = [
+        {
+          id: 1,
+          taskNumber: 'PT1750570001',
+          productName: '景泰蓝花瓶',
+          productSpec: '大号-蓝色',
+          taskType: 'POLISHING',
+          totalQuantity: 5,
+          completedQuantity: 0,
+          unitName: '个',
+          priority: 'URGENT',
+          status: 'AVAILABLE',
+          unitFee: 25.00,
+          isUrgent: true,
+          deadline: '2025-06-23 18:00:00',
+          createTime: '2025-06-22 09:00:00'
+        },
+        {
+          id: 2,
+          taskNumber: 'PT1750570002',
+          productName: '景泰蓝盘子',
+          productSpec: '中号-红色',
+          taskType: 'PAINTING',
+          totalQuantity: 10,
+          completedQuantity: 3,
+          unitName: '个',
+          priority: 'HIGH',
+          status: 'IN_PROGRESS',
+          unitFee: 18.00,
+          claimedBy: '李师傅',
+          workerAvatar: 'https://via.placeholder.com/40x40/1890ff/FFFFFF?text=李',
+          claimTime: '2025-06-22 10:00:00',
+          deadline: '2025-06-24 18:00:00',
+          createTime: '2025-06-22 08:30:00'
+        },
+        {
+          id: 3,
+          taskNumber: 'PT1750570003',
+          productName: '景泰蓝茶具',
+          productSpec: '套装-绿色',
+          taskType: 'ASSEMBLY',
+          totalQuantity: 3,
+          completedQuantity: 3,
+          unitName: '套',
+          priority: 'NORMAL',
+          status: 'COMPLETED',
+          unitFee: 45.00,
+          claimedBy: '王师傅',
+          workerAvatar: 'https://via.placeholder.com/40x40/52c41a/FFFFFF?text=王',
+          claimTime: '2025-06-21 14:00:00',
+          completeTime: '2025-06-22 11:30:00',
+          deadline: '2025-06-25 18:00:00',
+          createTime: '2025-06-21 13:30:00'
+        },
+        {
+          id: 4,
+          taskNumber: 'PT1750570004',
+          productName: '景泰蓝摆件',
+          productSpec: '龙凤-金色',
+          taskType: 'QUALITY_CHECK',
+          totalQuantity: 2,
+          completedQuantity: 2,
+          unitName: '个',
+          priority: 'HIGH',
+          status: 'QUALITY_CHECKED',
+          unitFee: 30.00,
+          claimedBy: '张师傅',
+          workerAvatar: 'https://via.placeholder.com/40x40/fa8c16/FFFFFF?text=张',
+          claimTime: '2025-06-21 16:00:00',
+          completeTime: '2025-06-22 09:30:00',
+          deadline: '2025-06-23 18:00:00',
+          createTime: '2025-06-21 15:30:00'
+        },
+        {
+          id: 5,
+          taskNumber: 'PT1750570005',
+          productName: '景泰蓝首饰盒',
+          productSpec: '小号-紫色',
+          taskType: 'PACKAGING',
+          totalQuantity: 8,
+          completedQuantity: 0,
+          unitName: '个',
+          priority: 'NORMAL',
+          status: 'CLAIMED',
+          unitFee: 12.00,
+          claimedBy: '赵师傅',
+          workerAvatar: 'https://via.placeholder.com/40x40/722ed1/FFFFFF?text=赵',
+          claimTime: '2025-06-22 11:00:00',
+          deadline: '2025-06-26 18:00:00',
+          createTime: '2025-06-22 10:30:00'
+        }
+      ];
+
+      // 设置分页信息
+      this.ipagination.total = this.taskList.length;
     },
-    
-    // 表格变化
+
+    // 表格变化处理
     handleTableChange(pagination, filters, sorter) {
-      this.ipagination = pagination
-      this.isorter = sorter
-      this.loadData()
+      this.ipagination = pagination;
+      this.loadTaskList();
     },
-    
-    // 获取状态颜色
-    getStatusColor(status) {
-      const colorMap = {
-        'PENDING': 'orange',
-        'IN_PROGRESS': 'blue',
-        'COMPLETED': 'green'
+
+    // 行选择变化
+    onSelectChange(selectedRowKeys) {
+      this.selectedRowKeys = selectedRowKeys;
+    },
+
+    // 搜索输入变化
+    onSearchChange(e) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = setTimeout(() => {
+        this.loadTaskList();
+      }, 300);
+    },
+
+    // 刷新
+    handleRefresh() {
+      this.loadTaskList();
+      this.loadStatistics();
+    },
+
+    // 批量领取
+    handleBatchClaim() {
+      if (this.selectedRowKeys.length === 0) {
+        this.$message.warning('请先选择要领取的任务');
+        return;
       }
-      return colorMap[status] || 'default'
+
+      this.$confirm({
+        title: '确认批量领取',
+        content: `确定要领取选中的 ${this.selectedRowKeys.length} 个任务吗？`,
+        onOk: async () => {
+          try {
+            // TODO: 调用批量领取API
+            this.$message.success('批量领取成功');
+            this.selectedRowKeys = [];
+            this.loadTaskList();
+          } catch (error) {
+            this.$message.error('批量领取失败');
+          }
+        }
+      });
     },
-    
+
+    // 我的任务
+    handleMyTasks() {
+      this.filters.claimedBy = 'current_user'; // 当前用户
+      this.loadTaskList();
+    },
+
+    // 领取任务
+    async handleClaimTask(record) {
+      try {
+        // TODO: 调用领取任务API
+        // const res = await postAction(this.url.claim, { taskId: record.id });
+        // if (res.code === 200) {
+        this.$message.success('任务领取成功');
+        this.loadTaskList();
+        // }
+      } catch (error) {
+        this.$message.error('任务领取失败');
+      }
+    },
+
+    // 开始任务
+    async handleStartTask(record) {
+      try {
+        // TODO: 调用开始任务API
+        this.$message.success('任务已开始');
+        this.loadTaskList();
+      } catch (error) {
+        this.$message.error('开始任务失败');
+      }
+    },
+
+    // 释放任务
+    handleReleaseTask(record) {
+      this.$confirm({
+        title: '确认释放任务',
+        content: `确定要释放任务 ${record.taskNumber} 吗？释放后其他人可以领取此任务。`,
+        onOk: async () => {
+          try {
+            // TODO: 调用释放任务API
+            this.$message.success('任务已释放');
+            this.loadTaskList();
+          } catch (error) {
+            this.$message.error('释放任务失败');
+          }
+        }
+      });
+    },
+
+    // 报工进度
+    handleReportProgress(record) {
+      this.$refs.progressReportModal.report(record);
+    },
+
+    // 完成任务
+    handleCompleteTask(record) {
+      this.$confirm({
+        title: '确认完成任务',
+        content: `确定要完成任务 ${record.taskNumber} 吗？`,
+        onOk: async () => {
+          try {
+            // TODO: 调用完成任务API
+            this.$message.success('任务已完成');
+            this.loadTaskList();
+          } catch (error) {
+            this.$message.error('完成任务失败');
+          }
+        }
+      });
+    },
+
+    // 质检
+    handleQualityCheck(record) {
+      this.$refs.qualityCheckModal.check(record);
+    },
+
+    // 查看任务详情
+    handleViewTask(record) {
+      this.$refs.taskDetailModal.view(record);
+    },
+
+    // 获取任务类型颜色
+    getTaskTypeColor(taskType) {
+      const colors = {
+        'POLISHING': 'blue',
+        'PAINTING': 'green',
+        'ASSEMBLY': 'orange',
+        'PACKAGING': 'purple',
+        'QUALITY_CHECK': 'red'
+      };
+      return colors[taskType] || 'default';
+    },
+
+    // 获取任务类型文本
+    getTaskTypeText(taskType) {
+      const texts = {
+        'POLISHING': '抛光',
+        'PAINTING': '上色',
+        'ASSEMBLY': '组装',
+        'PACKAGING': '包装',
+        'QUALITY_CHECK': '质检'
+      };
+      return texts[taskType] || '未知';
+    },
+
+    // 获取优先级颜色
+    getPriorityColor(priority) {
+      const colors = {
+        'LOW': 'default',
+        'NORMAL': 'blue',
+        'HIGH': 'orange',
+        'URGENT': 'red'
+      };
+      return colors[priority] || 'default';
+    },
+
+    // 获取优先级文本
+    getPriorityText(priority) {
+      const texts = {
+        'LOW': '低',
+        'NORMAL': '普通',
+        'HIGH': '高',
+        'URGENT': '紧急'
+      };
+      return texts[priority] || '普通';
+    },
+
+    // 获取状态徽章
+    getStatusBadge(status) {
+      const badges = {
+        'AVAILABLE': 'default',
+        'CLAIMED': 'processing',
+        'IN_PROGRESS': 'processing',
+        'COMPLETED': 'success',
+        'QUALITY_CHECKED': 'success'
+      };
+      return badges[status] || 'default';
+    },
+
     // 获取状态文本
     getStatusText(status) {
-      const textMap = {
-        'PENDING': '待认领',
+      const texts = {
+        'AVAILABLE': '可领取',
+        'CLAIMED': '已领取',
         'IN_PROGRESS': '进行中',
-        'COMPLETED': '已完成'
-      }
-      return textMap[status] || status
+        'COMPLETED': '已完成',
+        'QUALITY_CHECKED': '已质检'
+      };
+      return texts[status] || '未知';
     },
-    
-    // 获取工单类型颜色
-    getWorkTypeColor(workType) {
-      const colorMap = {
-        'CLOISONNE': 'blue',
-        'ACCESSORY': 'green',
-        'POST_PROCESS': 'orange'
-      }
-      return colorMap[workType] || 'default'
+
+    // 格式化时间
+    formatTime(time) {
+      if (!time) return '';
+      return dayjs(time).format('MM-DD HH:mm');
     },
-    
-    // 获取工单类型名称
-    getWorkTypeName(workType) {
-      const nameMap = {
-        'CLOISONNE': '掐丝点蓝',
-        'ACCESSORY': '配饰制作',
-        'POST_PROCESS': '后工'
-      }
-      return nameMap[workType] || workType
+
+    // 判断是否逾期
+    isOverdue(deadline) {
+      if (!deadline) return false;
+      return dayjs().isAfter(dayjs(deadline));
     }
   }
 }
 </script>
 
 <style scoped>
-.post-processing-task-list {
-  padding: 24px;
+.post-processing-tasks {
+  min-height: calc(100vh - 120px);
 }
 
-.table-page-search-wrapper {
-  margin-bottom: 16px;
-}
-
-.table-operator {
-  margin-bottom: 16px;
-}
-
-.table-page-search-submitButtons {
-  display: block;
-  margin-bottom: 24px;
-  white-space: nowrap;
-}
-
-.image-preview-container {
+.page-header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.preview-image {
-  max-width: 200px;
-  max-height: 200px;
-  object-fit: cover;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.header-left .page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.header-left .page-title .anticon {
+  margin-right: 8px;
+  color: #1890ff;
+}
+
+.page-subtitle {
+  color: #8c8c8c;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.statistics-panel {
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  margin-bottom: 16px;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  font-size: 20px;
+  color: white;
+}
+
+.stat-card.available .stat-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card.processing .stat-icon {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card.completed .stat-icon {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.stat-card.earnings .stat-icon {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-title {
+  font-size: 14px;
+  color: #8c8c8c;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: #262626;
+  line-height: 1;
+}
+
+.filter-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+.task-list-section {
+  background: white;
+  border-radius: 8px;
+}
+
+.task-number a {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.task-number a:hover {
+  text-decoration: underline;
+}
+
+.product-info .product-name {
+  font-weight: 500;
+  color: #262626;
+  margin-bottom: 4px;
+}
+
+.product-info .product-spec {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.quantity-info .total {
+  font-weight: 600;
+  color: #262626;
+}
+
+.quantity-info .unit {
+  margin-left: 4px;
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.quantity-info .completed {
+  font-size: 12px;
+  color: #52c41a;
+  margin-top: 4px;
+}
+
+.fee-info .unit-fee {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-bottom: 4px;
+}
+
+.fee-info .total-fee {
+  font-weight: 600;
+  color: #262626;
+}
+
+.worker-info {
+  display: flex;
+  align-items: center;
+}
+
+.worker-info .worker-name {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #262626;
+}
+
+.unclaimed {
+  color: #8c8c8c;
+  font-style: italic;
+}
+
+.time-info {
+  font-size: 11px;
+}
+
+.time-info > div {
+  margin-bottom: 4px;
+}
+
+.time-label {
+  color: #8c8c8c;
+  margin-right: 4px;
+}
+
+.time-value {
+  color: #595959;
+}
+
+.time-value.overdue {
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+.action-buttons .ant-btn {
+  margin-right: 8px;
+  margin-bottom: 4px;
+}
+
+.action-buttons .ant-btn:last-child {
+  margin-right: 0;
 }
 </style>

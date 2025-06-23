@@ -13,41 +13,21 @@ import java.util.Date;
 public class WorkOrder {
     private Long id;
 
-    private String workOrderNo;
+    private String workOrderNumber;
 
     private Long productionOrderId;
 
     private String workType;
 
-    private Long handlerId;
-
-    private String handlerName;
+    private Long handlerUserId;
 
     private String status;
 
     private BigDecimal cost;
 
-    private BigDecimal laborCost;
+    private String completionImageUrl;
 
-    private BigDecimal materialCost;
-
-    private Date startTime;
-
-    private Date completeTime;
-
-    private BigDecimal estimatedHours;
-
-    private BigDecimal actualHours;
-
-    private String completeImages;
-
-    private String processImages;
-
-    private String logisticsNo;
-
-    private String remark;
-
-    private String qualityNotes;
+    private String logisticsNumber;
 
     private Long tenantId;
 
@@ -57,9 +37,14 @@ public class WorkOrder {
 
     private Date updateTime;
 
-    private Long createBy;
+    private Long createUser;
 
-    private Long updateBy;
+    private Long updateUser;
+
+    // 新增字段用于支持WorkOrderServiceImpl
+    private Date completeTime;
+    private String completeImages;
+    private String qualityNotes;
 
     public Long getId() {
         return id;
@@ -69,12 +54,12 @@ public class WorkOrder {
         this.id = id;
     }
 
-    public String getWorkOrderNo() {
-        return workOrderNo;
+    public String getWorkOrderNumber() {
+        return workOrderNumber;
     }
 
-    public void setWorkOrderNo(String workOrderNo) {
-        this.workOrderNo = workOrderNo == null ? null : workOrderNo.trim();
+    public void setWorkOrderNumber(String workOrderNumber) {
+        this.workOrderNumber = workOrderNumber == null ? null : workOrderNumber.trim();
     }
 
     public Long getProductionOrderId() {
@@ -93,20 +78,12 @@ public class WorkOrder {
         this.workType = workType == null ? null : workType.trim();
     }
 
-    public Long getHandlerId() {
-        return handlerId;
+    public Long getHandlerUserId() {
+        return handlerUserId;
     }
 
-    public void setHandlerId(Long handlerId) {
-        this.handlerId = handlerId;
-    }
-
-    public String getHandlerName() {
-        return handlerName;
-    }
-
-    public void setHandlerName(String handlerName) {
-        this.handlerName = handlerName == null ? null : handlerName.trim();
+    public void setHandlerUserId(Long handlerUserId) {
+        this.handlerUserId = handlerUserId;
     }
 
     public String getStatus() {
@@ -125,92 +102,20 @@ public class WorkOrder {
         this.cost = cost;
     }
 
-    public BigDecimal getLaborCost() {
-        return laborCost;
+    public String getCompletionImageUrl() {
+        return completionImageUrl;
     }
 
-    public void setLaborCost(BigDecimal laborCost) {
-        this.laborCost = laborCost;
+    public void setCompletionImageUrl(String completionImageUrl) {
+        this.completionImageUrl = completionImageUrl == null ? null : completionImageUrl.trim();
     }
 
-    public BigDecimal getMaterialCost() {
-        return materialCost;
+    public String getLogisticsNumber() {
+        return logisticsNumber;
     }
 
-    public void setMaterialCost(BigDecimal materialCost) {
-        this.materialCost = materialCost;
-    }
-
-    public Date getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(Date startTime) {
-        this.startTime = startTime;
-    }
-
-    public Date getCompleteTime() {
-        return completeTime;
-    }
-
-    public void setCompleteTime(Date completeTime) {
-        this.completeTime = completeTime;
-    }
-
-    public BigDecimal getEstimatedHours() {
-        return estimatedHours;
-    }
-
-    public void setEstimatedHours(BigDecimal estimatedHours) {
-        this.estimatedHours = estimatedHours;
-    }
-
-    public BigDecimal getActualHours() {
-        return actualHours;
-    }
-
-    public void setActualHours(BigDecimal actualHours) {
-        this.actualHours = actualHours;
-    }
-
-    public String getCompleteImages() {
-        return completeImages;
-    }
-
-    public void setCompleteImages(String completeImages) {
-        this.completeImages = completeImages == null ? null : completeImages.trim();
-    }
-
-    public String getProcessImages() {
-        return processImages;
-    }
-
-    public void setProcessImages(String processImages) {
-        this.processImages = processImages == null ? null : processImages.trim();
-    }
-
-    public String getLogisticsNo() {
-        return logisticsNo;
-    }
-
-    public void setLogisticsNo(String logisticsNo) {
-        this.logisticsNo = logisticsNo == null ? null : logisticsNo.trim();
-    }
-
-    public String getRemark() {
-        return remark;
-    }
-
-    public void setRemark(String remark) {
-        this.remark = remark == null ? null : remark.trim();
-    }
-
-    public String getQualityNotes() {
-        return qualityNotes;
-    }
-
-    public void setQualityNotes(String qualityNotes) {
-        this.qualityNotes = qualityNotes == null ? null : qualityNotes.trim();
+    public void setLogisticsNumber(String logisticsNumber) {
+        this.logisticsNumber = logisticsNumber == null ? null : logisticsNumber.trim();
     }
 
     public Long getTenantId() {
@@ -245,19 +150,60 @@ public class WorkOrder {
         this.updateTime = updateTime;
     }
 
-    public Long getCreateBy() {
-        return createBy;
+    public Long getCreateUser() {
+        return createUser;
+    }
+
+    public void setCreateUser(Long createUser) {
+        this.createUser = createUser;
+    }
+
+    public Long getUpdateUser() {
+        return updateUser;
+    }
+
+    public void setUpdateUser(Long updateUser) {
+        this.updateUser = updateUser;
+    }
+
+    public Date getCompleteTime() {
+        return completeTime;
+    }
+
+    public void setCompleteTime(Date completeTime) {
+        this.completeTime = completeTime;
+    }
+
+    public String getCompleteImages() {
+        return completeImages;
+    }
+
+    public void setCompleteImages(String completeImages) {
+        this.completeImages = completeImages == null ? null : completeImages.trim();
+    }
+
+    public String getQualityNotes() {
+        return qualityNotes;
+    }
+
+    public void setQualityNotes(String qualityNotes) {
+        this.qualityNotes = qualityNotes == null ? null : qualityNotes.trim();
+    }
+
+    // 别名方法，用于兼容WorkOrderServiceImpl中的方法调用
+    public String getWorkOrderNo() {
+        return this.workOrderNumber;
+    }
+
+    public void setWorkOrderNo(String workOrderNo) {
+        this.workOrderNumber = workOrderNo == null ? null : workOrderNo.trim();
     }
 
     public void setCreateBy(Long createBy) {
-        this.createBy = createBy;
-    }
-
-    public Long getUpdateBy() {
-        return updateBy;
+        this.createUser = createBy;
     }
 
     public void setUpdateBy(Long updateBy) {
-        this.updateBy = updateBy;
+        this.updateUser = updateBy;
     }
 }

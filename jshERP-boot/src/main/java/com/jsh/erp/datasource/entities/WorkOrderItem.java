@@ -17,25 +17,11 @@ public class WorkOrderItem {
 
     private Long materialId;
 
-    private String materialName;
-
-    private String materialUnit;
-
     private BigDecimal quantity;
 
-    private BigDecimal unitPrice;
+    private String materialType;
 
-    private BigDecimal totalPrice;
-
-    private String itemType;
-
-    private Long depotId;
-
-    private String batchNumber;
-
-    private String serialNumber;
-
-    private String remark;
+    private BigDecimal unitCost;
 
     private Long tenantId;
 
@@ -45,9 +31,9 @@ public class WorkOrderItem {
 
     private Date updateTime;
 
-    private Long createBy;
+    private Long createUser;
 
-    private Long updateBy;
+    private Long updateUser;
 
     public Long getId() {
         return id;
@@ -73,22 +59,6 @@ public class WorkOrderItem {
         this.materialId = materialId;
     }
 
-    public String getMaterialName() {
-        return materialName;
-    }
-
-    public void setMaterialName(String materialName) {
-        this.materialName = materialName == null ? null : materialName.trim();
-    }
-
-    public String getMaterialUnit() {
-        return materialUnit;
-    }
-
-    public void setMaterialUnit(String materialUnit) {
-        this.materialUnit = materialUnit == null ? null : materialUnit.trim();
-    }
-
     public BigDecimal getQuantity() {
         return quantity;
     }
@@ -97,60 +67,20 @@ public class WorkOrderItem {
         this.quantity = quantity;
     }
 
-    public BigDecimal getUnitPrice() {
-        return unitPrice;
+    public String getMaterialType() {
+        return materialType;
     }
 
-    public void setUnitPrice(BigDecimal unitPrice) {
-        this.unitPrice = unitPrice;
+    public void setMaterialType(String materialType) {
+        this.materialType = materialType == null ? null : materialType.trim();
     }
 
-    public BigDecimal getTotalPrice() {
-        return totalPrice;
+    public BigDecimal getUnitCost() {
+        return unitCost;
     }
 
-    public void setTotalPrice(BigDecimal totalPrice) {
-        this.totalPrice = totalPrice;
-    }
-
-    public String getItemType() {
-        return itemType;
-    }
-
-    public void setItemType(String itemType) {
-        this.itemType = itemType == null ? null : itemType.trim();
-    }
-
-    public Long getDepotId() {
-        return depotId;
-    }
-
-    public void setDepotId(Long depotId) {
-        this.depotId = depotId;
-    }
-
-    public String getBatchNumber() {
-        return batchNumber;
-    }
-
-    public void setBatchNumber(String batchNumber) {
-        this.batchNumber = batchNumber == null ? null : batchNumber.trim();
-    }
-
-    public String getSerialNumber() {
-        return serialNumber;
-    }
-
-    public void setSerialNumber(String serialNumber) {
-        this.serialNumber = serialNumber == null ? null : serialNumber.trim();
-    }
-
-    public String getRemark() {
-        return remark;
-    }
-
-    public void setRemark(String remark) {
-        this.remark = remark == null ? null : remark.trim();
+    public void setUnitCost(BigDecimal unitCost) {
+        this.unitCost = unitCost;
     }
 
     public Long getTenantId() {
@@ -185,19 +115,19 @@ public class WorkOrderItem {
         this.updateTime = updateTime;
     }
 
-    public Long getCreateBy() {
-        return createBy;
+    public Long getCreateUser() {
+        return createUser;
     }
 
-    public void setCreateBy(Long createBy) {
-        this.createBy = createBy;
+    public void setCreateUser(Long createUser) {
+        this.createUser = createUser;
     }
 
-    public Long getUpdateBy() {
-        return updateBy;
+    public Long getUpdateUser() {
+        return updateUser;
     }
 
-    public void setUpdateBy(Long updateBy) {
-        this.updateBy = updateBy;
+    public void setUpdateUser(Long updateUser) {
+        this.updateUser = updateUser;
     }
 }

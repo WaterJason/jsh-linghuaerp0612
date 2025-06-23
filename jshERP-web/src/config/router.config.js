@@ -61,5 +61,25 @@ export const constantRouterMap = [
     path: '/404',
     component: () => import(/* webpackChunkName: "fail" */ '@/views/exception/404')
   },
+  {
+    path: '/demo',
+    component: () => import(/* webpackChunkName: "demo" */ '@/views/production/CloisonneProduction'),
+    meta: { title: '掐丝点蓝制作演示' }
+  },
+  {
+    path: '/demo-accessory',
+    component: () => import(/* webpackChunkName: "demo" */ '@/views/production/AccessoryProduction'),
+    meta: { title: '配饰制作演示' }
+  },
+  {
+    path: '/chongzuo-board',
+    component: () => import(/* webpackChunkName: "production" */ '@/views/production/ChongzuoProductionBoard'),
+    meta: { title: '崇左生产看板' }
+  },
+  {
+    path: '/post-processing-tasks',
+    component: () => import(/* webpackChunkName: "production" */ '@/views/production/PostProcessingTaskList'),
+    meta: { title: '后工任务列表' }
+  }
 
 ]
